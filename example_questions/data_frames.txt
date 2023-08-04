@@ -1,0 +1,15 @@
+
+The following questions relate to cicd-demo org, workspace FAA.
+
+Airport count by facility type
+Který FAC type má nejmenší počet letišť? Odpověz prosím v českém jazyce.
+
+Airports by region, state and facility type:
+
+The following questions relate to the demo workspace we provide for free:
+
+Campaign spend:
+In which campaign channel category we spend most money, bro?
+
+Percentage of customers by region:
+Between which following months was the difference in the sum of amount of active customers highest?
