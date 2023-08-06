@@ -1,7 +1,8 @@
 import streamlit as st
-from gooddata.agents.api_agent import ApiAgent
 from openapi_parser import parse
 from openapi_parser.specification import Specification
+
+from gooddata.agents.api_agent import ApiAgent
 
 
 class GoodDataApiExecutorApp:

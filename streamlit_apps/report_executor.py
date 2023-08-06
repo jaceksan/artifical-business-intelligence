@@ -1,9 +1,10 @@
+import pandas as pd
 import streamlit as st
+
 from gooddata.agents.common import AIMethod
 from gooddata.agents.report_agent import ReportAgent
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 from streamlit_apps.constants import ChartType
-import pandas as pd
 
 
 class GoodDataReportExecutorApp:

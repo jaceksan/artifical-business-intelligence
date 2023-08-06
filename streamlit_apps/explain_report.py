@@ -1,7 +1,8 @@
-import streamlit as st
 import pandas as pd
-from gooddata_sdk import GoodDataSdk, Insight
+import streamlit as st
 from gooddata_pandas import GoodPandas
+from gooddata_sdk import GoodDataSdk, Insight
+
 from gooddata.agents.explain_report_agent import GoodDataExplainReportAgent
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 from gooddata.tools import get_title_for_id

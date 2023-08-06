@@ -1,16 +1,17 @@
 import json
 import os
 from typing import Any, Optional
+
 import pandas as pd
 import requests
 from openapi_parser.enumeration import OperationMethod
-from gooddata.agents.common import GoodDataOpenAICommon
-from gooddata.tools import create_dir, TMP_DIR
 from openapi_parser.specification import Specification
+
+from gooddata.agents.common import GoodDataOpenAICommon
+from gooddata.tools import TMP_DIR, create_dir
 
 
 class ApiAgent(GoodDataOpenAICommon):
-
     def get_open_ai_sys_msg(self, specification: Specification) -> str:
         sys_msg = f"""
 Here is the full list of {self.unique_prefix} APIs:
@@ -19,7 +20,11 @@ Here is the full list of {self.unique_prefix} APIs:
         for api_path in specification.paths:
             if api_path.url.startswith("/api/v1/entities"):
                 for operation in api_path.operations:
-                    if operation.method == OperationMethod.GET and operation.summary is not None and operation.summary != "":
+                    if (
+                        operation.method == OperationMethod.GET
+                        and operation.summary is not None
+                        and operation.summary != ""
+                    ):
                         print(f"------ {api_path.url} -----------")
                         sys_msg += f"""
 API path: {api_path.url}
@@ -34,7 +39,8 @@ Answer: /api/v1/entities/workspaces
 Question: Get workspace
 Answer: /api/v1/entities/workspaces/{self.workspace_id}
 
-Return only the path, e.g. "/api/v1/entities/workspaces", do not return any other text, no explanation, nothing else than the API path!
+Return only the path, e.g. "/api/v1/entities/workspaces",
+do not return any other text, no explanation, nothing else than the API path!
 """
         create_dir(TMP_DIR)
         with open(TMP_DIR / "api.txt", "w") as fp:
@@ -49,7 +55,11 @@ Return only the path, e.g. "/api/v1/entities/workspaces", do not return any othe
             if api_path.url.startswith("/api/v1/entities"):
                 valid_apis[api_path.url] = {}
                 for operation in api_path.operations:
-                    if operation.method == OperationMethod.GET and operation.summary is not None and operation.summary != "":
+                    if (
+                        operation.method == OperationMethod.GET
+                        and operation.summary is not None
+                        and operation.summary != ""
+                    ):
                         valid_apis[api_path.url][operation.method] = {
                             "operation": operation,
                             "openapi_function": f"function_{function_id}",
@@ -64,11 +74,11 @@ Return only the path, e.g. "/api/v1/entities/workspaces", do not return any othe
             for operation_method, odata in adata.items():
                 properties = {}
                 required = []
-                for param in odata['operation'].parameters:
+                for param in odata["operation"].parameters:
                     properties[param.name] = {
                         # TODO - add support for other types
                         "type": "string",
-                        "description": param.description
+                        "description": param.description,
                     }
                     if param.required:
                         required.append(param.name)
@@ -80,7 +90,7 @@ Return only the path, e.g. "/api/v1/entities/workspaces", do not return any othe
                             "type": "object",
                             "properties": properties,
                             "required": required,
-                        }
+                        },
                     }
                 )
         # For debug
@@ -96,30 +106,26 @@ Return only the path, e.g. "/api/v1/entities/workspaces", do not return any othe
     @staticmethod
     def _prepare_request(path: str) -> dict[str, Any]:
         kwargs: dict[str, Any] = {
-            'url': f"{os.environ['GOODDATA_HOST']}{path}",
-            'headers': {
-                "Content-type": "application/vnd.gooddata.api+json",
-                "charset": "utf-8"
-            }
+            "url": f"{os.environ['GOODDATA_HOST']}{path}",
+            "headers": {"Content-type": "application/vnd.gooddata.api+json", "charset": "utf-8"},
         }
-        kwargs['headers']['Authorization'] = f'Bearer {os.environ["GOODDATA_TOKEN"]}'
+        kwargs["headers"]["Authorization"] = f'Bearer {os.environ["GOODDATA_TOKEN"]}'
         return kwargs
 
     @staticmethod
-    def _resolve_return_code(response: requests.Response, ok_code: int,
-                             url: str, method: str) -> Optional[requests.Response]:
+    def _resolve_return_code(
+        response: requests.Response, ok_code: int, url: str, method: str
+    ) -> Optional[requests.Response]:
         if response.status_code == ok_code:
             return response
         else:
-            print(
-                f'{method} to {url} failed - response_code={response.status_code} message={response.text}'
-            )
+            print(f"{method} to {url} failed - response_code={response.status_code} message={response.text}")
             return None
 
     def get(self, path: str, ok_code: int = 200) -> Optional[requests.Response]:
         kwargs = self._prepare_request(path)
         response = requests.get(**kwargs)
-        return self._resolve_return_code(response, ok_code, kwargs['url'], 'RestApi.get')
+        return self._resolve_return_code(response, ok_code, kwargs["url"], "RestApi.get")
 
     @staticmethod
     def process_entity_data(data: list[dict]) -> list[dict]:
@@ -128,10 +134,7 @@ Return only the path, e.g. "/api/v1/entities/workspaces", do not return any othe
             attributes = {}
             for attr_key, attr_value in row["attributes"].items():
                 attributes[attr_key] = attr_value
-            result.append({
-                "id": row["id"],
-                **attributes
-            })
+            result.append({"id": row["id"], **attributes})
         return result
 
     def process(self, prompt: str, specification: Specification) -> pd.DataFrame:
