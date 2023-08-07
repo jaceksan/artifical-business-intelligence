@@ -2,11 +2,13 @@ import os
 from enum import Enum
 from time import time
 from typing import Optional
+
+import openai
+from dotenv import load_dotenv
 from langchain.chains import ConversationChain
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
-import openai
-from dotenv import load_dotenv
+
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 
 
@@ -85,7 +87,7 @@ class GoodDataOpenAICommon:
         self.log_openai_start()
         chain = self.get_conversation_chain()
         result = chain.run(input=request)
-        duration = int((time() - start)*1000)
+        duration = int((time() - start) * 1000)
         print(f"OpenAI query finished duration={duration}")
         return result
 
@@ -105,7 +107,7 @@ class GoodDataOpenAICommon:
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
-            ]
+            ],
         }
         if functions:
             kwargs["functions"] = functions
@@ -114,6 +116,6 @@ class GoodDataOpenAICommon:
 
         completion = openai.ChatCompletion.create(**kwargs)
         print(f"Tokens: {completion.usage}")
-        duration = int((time() - start)*1000)
+        duration = int((time() - start) * 1000)
         print(f"OpenAI query finished duration={duration}")
         return completion

@@ -1,7 +1,8 @@
-from typing import Optional
 import os
-from gooddata_sdk import GoodDataSdk
+from typing import Optional
+
 from gooddata_pandas import GoodPandas
+from gooddata_sdk import GoodDataSdk
 
 
 class GoodDataSdkWrapper:

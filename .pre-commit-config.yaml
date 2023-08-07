@@ -32,22 +32,12 @@ repos:
           - --no-warnings
           - -d
           - '{extends: relaxed, rules: {line-length: {max: 90}}}'
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.2
-    hooks:
-      - id: codespell
-        args:
-          # - --builtin=clear,rare,informal,usage,code,names,en-GB_to_en-US
-          - --builtin=clear,rare,informal,usage,code,names
-          - --ignore-words-list=hass,master
-          - --skip="./.*"
-          - --quiet-level=2
   - repo: https://github.com/psf/black
     rev: 23.3.0
     hooks:
       - id: black
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.272
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.282
     hooks:
       - id: ruff
         args: [ "--fix", "--fixable", "I" ]

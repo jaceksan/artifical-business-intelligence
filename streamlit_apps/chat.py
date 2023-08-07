@@ -1,7 +1,8 @@
-import streamlit as st
-from gooddata.agents.common import GoodDataOpenAICommon
 import openai
+import streamlit as st
 from streamlit_chat import message
+
+from gooddata.agents.common import GoodDataOpenAICommon
 
 
 class GoodDataChatApp:

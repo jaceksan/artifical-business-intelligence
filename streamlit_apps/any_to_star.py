@@ -1,6 +1,7 @@
 import streamlit as st
-from gooddata_sdk import GoodDataSdk, CatalogDataSource
-from gooddata.agents.any_to_star_agent import GoodDataAnyToStarAgent, AnyToStarResultType
+from gooddata_sdk import CatalogDataSource, GoodDataSdk
+
+from gooddata.agents.any_to_star_agent import AnyToStarResultType, GoodDataAnyToStarAgent
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 from gooddata.tools import get_name_for_id
 

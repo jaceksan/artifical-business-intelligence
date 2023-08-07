@@ -1,18 +1,19 @@
-from pathlib import Path
 import json
 import re
+from pathlib import Path
+
 import pandas as pd
 from gooddata_sdk import Attribute, ObjId, SimpleMetric
-from gooddata.agents.common import GoodDataOpenAICommon, AIMethod
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import TextLoader
 from langchain.indexes import VectorstoreIndexCreator
-from gooddata.tools import create_dir, TMP_DIR
+
+from gooddata.agents.common import AIMethod, GoodDataOpenAICommon
+from gooddata.tools import TMP_DIR, create_dir
 
 
 class ReportAgent(GoodDataOpenAICommon):
-
     @staticmethod
     def answer_to_json(answer: str) -> dict:
         """Transform answer to dict, no matter the format.
@@ -40,7 +41,7 @@ class ReportAgent(GoodDataOpenAICommon):
 
     @staticmethod
     def get_open_ai_sys_msg() -> str:
-        return f"""
+        return """
             You create ExecutionDefinition and always write only the .json without any explanation.
             This means, that you always start with "{{" and end with "}}".
 

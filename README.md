@@ -5,6 +5,20 @@ All use cases are implemented as Agent classes in [gooddata/agents](gooddata/age
 
 Main [gooddata_agents.py](gooddata_agents.py) file embeds these agents into a Steamlit application.
 
+## Before you start
+
+```bash
+cp example.env .env
+```
+
+And fill in values for OPENAI_API_KEY and OPENAI_ORGANIZATION.
+
+Then you can run streamlit apps using the following code:
+
+```bash
+streamlit run gooddata_agents.py
+```
+
 ## Agents
 So far all agents connect to OpenAI API.
 

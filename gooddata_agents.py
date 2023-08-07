@@ -1,13 +1,14 @@
-from dotenv import load_dotenv
-import streamlit as st
-import os
 import argparse
+import os
+
+import openai
+import streamlit as st
+from dotenv import load_dotenv
+from openapi_parser import parse
+from openapi_parser.specification import Specification
 
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 from gooddata.tools import get_name_for_id
-import openai
-from openapi_parser import parse
-from openapi_parser.specification import Specification
 from streamlit_apps.any_to_star import GoodDataAnyToStarApp
 from streamlit_apps.api_executor import GoodDataApiExecutorApp
 from streamlit_apps.chat import GoodDataChatApp
@@ -34,7 +35,7 @@ class GoodDataAgentsDemo:
         parser = argparse.ArgumentParser(
             conflict_handler="resolve",
             description="Talk to GoodData",
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         return parser.parse_args()
 
@@ -80,10 +81,7 @@ class GoodDataAgentsDemo:
             st.session_state["openai_model"] = default_model
         models = get_supported_models()
         st.sidebar.selectbox(
-            label="OpenAI model:",
-            options=models,
-            key="openai_model",
-            index=models.index(default_model)
+            label="OpenAI model:", options=models, key="openai_model", index=models.index(default_model)
         )
 
     def main(self):

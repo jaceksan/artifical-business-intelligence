@@ -1,13 +1,13 @@
 from typing import Union
 
-from gooddata.agents.common import GoodDataOpenAICommon
 import pandas as pd
 from langchain.agents import create_pandas_dataframe_agent
 from pandasai import PandasAI
 
+from gooddata.agents.common import GoodDataOpenAICommon
+
 
 class GoodDataExplainReportAgent(GoodDataOpenAICommon):
-
     def ask_create_pd_agent(self, df: pd.DataFrame, query: str) -> str:
         agent = create_pandas_dataframe_agent(
             self.get_openai(),
