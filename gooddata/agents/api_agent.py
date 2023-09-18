@@ -41,6 +41,16 @@ Answer: /api/v1/entities/workspaces/{self.workspace_id}
 
 Return only the path, e.g. "/api/v1/entities/workspaces",
 do not return any other text, no explanation, nothing else than the API path!
+
+When the question contains some additional contex info, add filter to the API path in this way:
+Question: Show me metrics related to flights
+Answer: /api/v1/entities/workspaces/{self.workspace_id}/metrics?filter=title%3Dcontainsic%3Dflight
+Question: Show me facts which have something to do with aircraft
+Answer: /api/v1/entities/workspaces/{self.workspace_id}/facts?filter=title%3Dcontainsic%3Daircraft
+
+Warning: APIs for workspaces and dataSources must be filtered by "name", not by "title". Example:
+Question: Show me workspaces which have something to do with federal
+Answer: /api/v1/entities/workspaces?filter=name%3Dcontainsic%3Dfederal
 """
         create_dir(TMP_DIR)
         with open(TMP_DIR / "api.txt", "w") as fp:
