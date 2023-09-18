@@ -14,6 +14,7 @@ from streamlit_apps.api_executor import GoodDataApiExecutorApp
 from streamlit_apps.chat import GoodDataChatApp
 from streamlit_apps.constants import GoodDataAgent
 from streamlit_apps.explain_report import GoodDataExplainReportApp
+from streamlit_apps.maql import GoodDataMaqlApp
 from streamlit_apps.report_executor import GoodDataReportExecutorApp
 
 # Workaround - when we utilize "key" property in multiselect/selectbox,
@@ -105,6 +106,8 @@ class GoodDataAgentsDemo:
                 GoodDataReportExecutorApp(self.gd_sdk).render()
             elif selected_agent == GoodDataAgent.API_EXECUTOR:
                 GoodDataApiExecutorApp().render()
+            elif selected_agent == GoodDataAgent.MAQL_GENERATOR:
+                GoodDataMaqlApp(self.gd_sdk).render()
             else:
                 raise Exception(f"Unsupported Agent: {selected_agent=}")
 

@@ -1,0 +1,5 @@
+Workspace for CI/CD demo (Github data).
+
+Q: Sum of count of commits where repository name is like "gooddata"
+
+Q: Sum of count of commits 3 months (created at) ago

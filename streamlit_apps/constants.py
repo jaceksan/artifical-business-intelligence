@@ -7,6 +7,7 @@ class GoodDataAgent(Enum):
     ANY_TO_STAR = "Any to Star Model"
     REPORT_EXECUTOR = "Report executor"
     API_EXECUTOR = "API executor"
+    MAQL_GENERATOR = "MAQL generator"
 
 
 class ChartType(Enum):
