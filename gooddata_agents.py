@@ -89,7 +89,8 @@ class GoodDataAgentsDemo:
         # render corresponding input fields so users can set them manually
         self.render_openai_key_setting()
         self.render_agent_picker()
-        self.render_openai_models_picker()
+        if st.session_state.openai_api_key:
+            self.render_openai_models_picker()
 
         selected_agent = GoodDataAgent[st.session_state.get("agent")]
 
