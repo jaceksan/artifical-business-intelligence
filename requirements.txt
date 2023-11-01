@@ -1,28 +1,31 @@
-langchain==0.0.251
-gpt4all==1.0.8
-chromadb==0.4.5
-# llama-cpp-python must stay on this version, otherwise LlamaCpp models do not work
-llama-cpp-python==0.1.48
-urllib3==2.0.4
-pdfminer.six==20221105
+langchain==0.0.327
+langchain_experimental==0.0.36
 python-dotenv==1.0.0
-unstructured==0.9.0
-extract-msg==0.44.0
 tabulate==0.9.0
-pandoc==2.3
-pypandoc==1.11
-tqdm==4.65.0
-openai==0.27.8
-psutil==5.9.5
-gooddata_pandas==1.4.0
+gooddata_pandas==1.7.0
+openai==0.27.10
 pyyaml>=5.1
-sentence_transformers==2.2.2
-streamlit==1.25.0
+streamlit==1.28.0
 streamlit-chat==0.1.1
-matplotlib==3.7.2
+matplotlib==3.8.1
 jupyter==1.0.0
-pdf2image==1.16.3
-tiktoken==0.4.0
 openapi3-parser==1.1.10
-wheel==0.41.0
+wheel==0.41.3
 pandasai==0.8.1
+flask-sqlalchemy==3.1.1
+# TODO - on-premise LLM
+# gpt4all==1.0.8
+# chromadb==0.4.5
+# # llama-cpp-python must stay on this version, otherwise LlamaCpp models do not work
+# llama-cpp-python==0.1.48
+# urllib3==2.0.4
+# pandoc==2.3
+# pypandoc==1.11
+# tqdm==4.65.0
+# unstructured==0.9.0
+# extract-msg==0.44.0
+# psutil==5.9.5
+# pdf2image==1.16.3
+# tiktoken==0.4.0
+# pdfminer.six==20221105
+# sentence_transformers==2.2.2

@@ -44,6 +44,8 @@ class GoodDataAnyToStarApp:
         with columns[1]:
             self.render_result_type_picker()
 
+        st.info("This agent can be quite slow, please be patient.")
+
         if st.button("Generate", type="primary"):
             try:
                 data_source_id = st.session_state.data_source_id
