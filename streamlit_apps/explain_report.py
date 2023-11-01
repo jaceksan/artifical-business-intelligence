@@ -36,6 +36,8 @@ class GoodDataExplainReportApp:
             if st.button("Submit Query", type="primary"):
                 if query:
                     try:
+                        # full_query = (f"Context: if possible, return valid Pandas data frame, and nothing else.\n\n" +
+                        #               f"Question: {query}")
                         result = self.agent.process(query, insight_id)
                         print(result)
                         if isinstance(result, pd.DataFrame):

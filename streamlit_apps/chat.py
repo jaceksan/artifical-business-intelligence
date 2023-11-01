@@ -25,10 +25,16 @@ class GoodDataChatApp:
             chain = self.agent.get_conversation_chain()
             user_input = st.text_area("Ask GoodData a question:")
 
-            if st.button("Submit Query", type="primary"):
-                output = chain.run(input=user_input)
-                st.session_state.past.append(user_input)
-                st.session_state.generated.append(output)
+            columns = st.columns(2)
+            with columns[0]:
+                if st.button("Submit Query", type="primary"):
+                    output = chain.run(input=user_input)
+                    st.session_state.past.append(user_input)
+                    st.session_state.generated.append(output)
+            with columns[1]:
+                if st.button("Clear chat history", type="primary"):
+                    st.session_state["generated"] = []
+                    st.session_state["past"] = []
 
             if st.session_state["generated"]:
                 for i in range(len(st.session_state["generated"]) - 1, -1, -1):

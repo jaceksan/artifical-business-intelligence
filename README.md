@@ -3,7 +3,9 @@ Investigating the capabilities of LLM/AI and how we could leverage it for BI/ana
 
 All use cases are implemented as Agent classes in [gooddata/agents](gooddata/agents).
 
-Main [gooddata_agents.py](gooddata_agents.py) file embeds these agents into a Steamlit application.
+Main [gooddata_agents.py](gooddata_agents.py) file embeds these agents into a Streamlit application.
+
+The app is deployed to Streamlit cloud and can be accessed [here](https://artifical-business-intelligence.streamlit.app/).
 
 ## Before you start
 
@@ -57,6 +59,17 @@ Users can ask questions like "list workspaces".
 OpenAI answers with what API should be called.
 
 Agent calls the API and returns result as a data frame.
+
+### MAQL Agent
+[MAQL](https://www.gooddata.com/docs/cloud/create-metrics/maql/) is a GoodData-specific language for defining metrics.
+This agent can generate MAQL from natural language query.
+
+Example:
+```
+Q: Sum of count of commits where repository name is like "gooddata"
+
+A: SELECT SUM({metric/commit_count}) WHERE {label/repository_name} LIKE "%gooddata%"
+```
 
 ## TODO
 1. On-premise LLM as an alternative

@@ -7,7 +7,6 @@ import openai
 from dotenv import load_dotenv
 from langchain.chains import ConversationChain
 from langchain.chat_models import ChatOpenAI
-from langchain.llms import OpenAI
 
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 
@@ -70,17 +69,14 @@ class GoodDataOpenAICommon:
             "organization": self.openai_organization,
         }
 
+    def get_chat_llm_model(self):
+        return ChatOpenAI(**self.openai_kwargs)
+
     def get_conversation_chain(self) -> ConversationChain:
         llm = ChatOpenAI(**self.openai_kwargs)
 
         chain = ConversationChain(llm=llm)
         return chain
-
-    def get_openai(self) -> OpenAI:
-        # Some part of Langchain does not accept this key, most likely a bug
-        openai_kwargs = self.openai_kwargs
-        del openai_kwargs["openai_organization"]
-        return OpenAI(**openai_kwargs)
 
     def ask_question(self, request: str) -> str:
         start = time()
