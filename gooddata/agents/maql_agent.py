@@ -1,13 +1,4 @@
-import json
-import os
-from typing import Any, Optional
-
-import pandas as pd
-import requests
-from openapi_parser.enumeration import OperationMethod
-from openapi_parser.specification import Specification
-
-from gooddata.agents.common import GoodDataOpenAICommon
+from gooddata.agents.libs.gd_openai import GoodDataOpenAICommon
 from gooddata.tools import TMP_DIR, create_dir
 
 
@@ -65,7 +56,8 @@ Here is the list of available entities:
             fp.write(sys_msg)
         return sys_msg
 
-    def get_open_ai_raw_prompt(self, question: str) -> str:
+    @staticmethod
+    def get_open_ai_raw_prompt(question: str) -> str:
         return f"""Answer this question: "{question}" """
 
     def process(self, prompt: str) -> str:

@@ -7,7 +7,7 @@ import requests
 from openapi_parser.enumeration import OperationMethod
 from openapi_parser.specification import Specification
 
-from gooddata.agents.common import GoodDataOpenAICommon
+from gooddata.agents.libs.gd_openai import GoodDataOpenAICommon
 from gooddata.tools import TMP_DIR, create_dir
 
 

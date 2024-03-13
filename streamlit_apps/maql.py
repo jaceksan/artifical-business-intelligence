@@ -2,7 +2,6 @@ import openai
 import streamlit as st
 from streamlit_chat import message
 
-from gooddata.agents.common import GoodDataOpenAICommon
 from gooddata.agents.maql_agent import MaqlAgent
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 
@@ -73,7 +72,6 @@ class GoodDataMaqlApp:
             if st.checkbox("Show model entities"):
                 self.show_model_entities()
 
-        except openai.error.AuthenticationError as e:
-            st.write("OpenAI unknown authentication error")
-            st.write(e.json_body)
-            st.write(e.headers)
+        except openai.AuthenticationError as e:
+            st.error("OpenAI unknown authentication error")
+            st.error(e)

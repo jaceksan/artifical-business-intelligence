@@ -3,7 +3,7 @@ from typing import Union
 import pandas as pd
 from pandasai import PandasAI
 
-from gooddata.agents.common import GoodDataOpenAICommon
+from gooddata.agents.libs.gd_openai import GoodDataOpenAICommon
 
 
 class GoodDataExplainReportAgent(GoodDataOpenAICommon):

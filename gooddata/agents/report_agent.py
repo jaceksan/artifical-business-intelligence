@@ -9,7 +9,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import TextLoader
 from langchain.indexes import VectorstoreIndexCreator
 
-from gooddata.agents.common import AIMethod, GoodDataOpenAICommon
+from gooddata.agents.libs.gd_openai import GoodDataOpenAICommon, AIMethod
 from gooddata.tools import TMP_DIR, create_dir
 
 

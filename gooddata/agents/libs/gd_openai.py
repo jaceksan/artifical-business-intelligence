@@ -1,13 +1,14 @@
 import os
 from enum import Enum
-from time import time
 from typing import Optional
-
-import openai
 from dotenv import load_dotenv
+
+from openai import OpenAI
 from langchain.chains import ConversationChain
 from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
+from gooddata.agents.libs.utils import timeit
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 
 
@@ -36,6 +37,10 @@ class GoodDataOpenAICommon:
         self.openai_model = openai_model
         self.openai_api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
         self.openai_organization = openai_organization or os.getenv("OPENAI_ORGANIZATION")
+        self.openai_client = OpenAI(
+            api_key=openai_api_key,
+            organization=openai_organization,
+        )
         self.temperature = temperature
         self.workspace_id = workspace_id
 
@@ -43,13 +48,6 @@ class GoodDataOpenAICommon:
         self.gd_sdk = GoodDataSdkWrapper()
 
         self.chain = self.get_conversation_chain()
-
-    def log_openai_start(self, method: AIMethod = AIMethod.RAW):
-        print(
-            f"""Asking OpenAI.
-              model: {self.openai_model}
-              method: {method.value}"""
-        )
 
     @property
     def openai_kwargs(self) -> dict:
@@ -78,15 +76,13 @@ class GoodDataOpenAICommon:
         chain = ConversationChain(llm=llm)
         return chain
 
+    @timeit
     def ask_question(self, request: str) -> str:
-        start = time()
-        self.log_openai_start()
         chain = self.get_conversation_chain()
         result = chain.run(input=request)
-        duration = int((time() - start) * 1000)
-        print(f"OpenAI query finished duration={duration}")
         return result
 
+    @timeit
     def ask_chat_completion(
         self,
         system_prompt: str,
@@ -94,9 +90,6 @@ class GoodDataOpenAICommon:
         functions: Optional[list[dict]] = None,
         function_name: Optional[str] = None,
     ):
-        start = time()
-        method = AIMethod.FUNC if functions else AIMethod.FUNC
-        self.log_openai_start(method)
         kwargs = {
             **self.openai_chat_credential_kwargs,
             "model": self.openai_model,
@@ -110,8 +103,6 @@ class GoodDataOpenAICommon:
         if function_name:
             kwargs["function_call"] = {"name": function_name}
 
-        completion = openai.ChatCompletion.create(**kwargs)
+        completion = self.openai_client.chat.completions.create(**kwargs)
         print(f"Tokens: {completion.usage}")
-        duration = int((time() - start) * 1000)
-        print(f"OpenAI query finished duration={duration}")
         return completion
