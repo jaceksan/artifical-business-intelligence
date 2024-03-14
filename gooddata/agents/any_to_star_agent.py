@@ -3,7 +3,7 @@ from time import time
 
 from gooddata_sdk.catalog.data_source.declarative_model.physical_model.pdm import CatalogScanResultPdm
 
-from gooddata.agents.common import GoodDataOpenAICommon
+from gooddata.agents.libs.gd_openai import GoodDataOpenAICommon
 from gooddata.tools import TMP_DIR, create_dir
 
 

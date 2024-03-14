@@ -3,11 +3,13 @@ from enum import Enum
 
 class GoodDataAgent(Enum):
     CHAT = "Chat"
-    EXPLAIN_DATA = "Explain data"
+    # PandasAI is no longer supported
+    # EXPLAIN_DATA = "Explain data"
     ANY_TO_STAR = "Any to Star Model"
     REPORT_EXECUTOR = "Report executor"
     API_EXECUTOR = "API executor"
     MAQL_GENERATOR = "MAQL generator"
+    RAG = "RAG"
 
 
 class ChartType(Enum):

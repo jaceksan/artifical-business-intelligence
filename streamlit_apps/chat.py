@@ -2,7 +2,7 @@ import openai
 import streamlit as st
 from streamlit_chat import message
 
-from gooddata.agents.common import GoodDataOpenAICommon
+from gooddata.agents.libs.gd_openai import GoodDataOpenAICommon
 
 
 class GoodDataChatApp:
@@ -40,7 +40,6 @@ class GoodDataChatApp:
                 for i in range(len(st.session_state["generated"]) - 1, -1, -1):
                     message(st.session_state["generated"][i], key=str(i))
                     message(st.session_state["past"][i], is_user=True, key=str(i) + "_user")
-        except openai.error.AuthenticationError as e:
-            st.write("OpenAI unknown authentication error")
-            st.write(e.json_body)
-            st.write(e.headers)
+        except openai.AuthenticationError as e:
+            st.error("OpenAI unknown authentication error")
+            st.error(e)

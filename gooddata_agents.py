@@ -1,19 +1,22 @@
 import argparse
 import os
 
-import openai
+from openai import OpenAI
+
 import streamlit as st
 from dotenv import load_dotenv
 from openapi_parser import parse
 from openapi_parser.specification import Specification
 
+from gooddata.agents.libs.utils import timeit
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 from gooddata.tools import get_name_for_id
+from streamlit_apps.RAG import GoodDataRAGApp
 from streamlit_apps.any_to_star import GoodDataAnyToStarApp
 from streamlit_apps.api_executor import GoodDataApiExecutorApp
 from streamlit_apps.chat import GoodDataChatApp
 from streamlit_apps.constants import GoodDataAgent
-from streamlit_apps.explain_report import GoodDataExplainReportApp
+# from streamlit_apps.explain_report import GoodDataExplainReportApp
 from streamlit_apps.maql import GoodDataMaqlApp
 from streamlit_apps.report_executor import GoodDataReportExecutorApp
 
@@ -29,6 +32,12 @@ class GoodDataAgentsDemo:
         self.gd_sdk = GoodDataSdkWrapper()
         st.set_page_config(layout="wide", page_icon="favicon.ico", page_title="Talk to GoodData")
         self.render_workspace_picker()
+        self._app_chat = None
+        self._app_any_to_star = None
+        self._app_report_executor = None
+        self._app_api_executor = None
+        self._app_maql = None
+        self._app_rag = None
 
     # It must be set here globally
     @staticmethod
@@ -85,6 +94,7 @@ class GoodDataAgentsDemo:
             label="OpenAI model:", options=models, key="openai_model", index=models.index(default_model)
         )
 
+    @timeit
     def main(self):
         # If OPENAI credentials are not set as env variables,
         # render corresponding input fields so users can set them manually
@@ -98,8 +108,6 @@ class GoodDataAgentsDemo:
         if st.session_state.openai_api_key:
             if selected_agent == GoodDataAgent.CHAT:
                 GoodDataChatApp().render()
-            elif selected_agent == GoodDataAgent.EXPLAIN_DATA:
-                GoodDataExplainReportApp(self.gd_sdk).render()
             elif selected_agent == GoodDataAgent.ANY_TO_STAR:
                 GoodDataAnyToStarApp(self.gd_sdk).render()
             elif selected_agent == GoodDataAgent.REPORT_EXECUTOR:
@@ -108,15 +116,22 @@ class GoodDataAgentsDemo:
                 GoodDataApiExecutorApp().render()
             elif selected_agent == GoodDataAgent.MAQL_GENERATOR:
                 GoodDataMaqlApp(self.gd_sdk).render()
+            elif selected_agent == GoodDataAgent.RAG:
+                GoodDataRAGApp(self.gd_sdk).render()
+            # PandasAI is no longer supported
+            # elif selected_agent == GoodDataAgent.EXPLAIN_DATA:
+            #     GoodDataExplainReportApp(self.gd_sdk).render()
             else:
                 raise Exception(f"Unsupported Agent: {selected_agent=}")
 
 
 @st.cache_data
 def get_supported_models() -> list[str]:
-    openai.api_key = st.session_state.openai_api_key
-    openai.organization = st.session_state.openai_organization
-    return [m["id"] for m in openai.Model.list()["data"]]
+    client = OpenAI(
+        api_key=st.session_state.openai_api_key,
+        organization=st.session_state.openai_organization,
+    )
+    return [m.id for m in client.models.list().data]
 
 
 @st.cache_data
