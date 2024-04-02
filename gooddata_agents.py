@@ -1,23 +1,23 @@
 import argparse
 import os
 
-from openai import OpenAI
-
 import streamlit as st
 from dotenv import load_dotenv
+from openai import OpenAI
 from openapi_parser import parse
 from openapi_parser.specification import Specification
 
 from gooddata.agents.libs.utils import timeit
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 from gooddata.tools import get_name_for_id
-from streamlit_apps.RAG import GoodDataRAGApp
 from streamlit_apps.any_to_star import GoodDataAnyToStarApp
 from streamlit_apps.api_executor import GoodDataApiExecutorApp
 from streamlit_apps.chat import GoodDataChatApp
 from streamlit_apps.constants import GoodDataAgent
+
 # from streamlit_apps.explain_report import GoodDataExplainReportApp
 from streamlit_apps.maql import GoodDataMaqlApp
+from streamlit_apps.RAG import GoodDataRAGApp
 from streamlit_apps.report_executor import GoodDataReportExecutorApp
 
 # Workaround - when we utilize "key" property in multiselect/selectbox,
@@ -29,6 +29,7 @@ class GoodDataAgentsDemo:
     def __init__(self) -> None:
         self.args = self.parse_arguments()
         load_dotenv()
+        OpenAI.api_key = os.getenv("OPENAI_API_KEY")
         self.gd_sdk = GoodDataSdkWrapper()
         st.set_page_config(layout="wide", page_icon="favicon.ico", page_title="Talk to GoodData")
         self.render_workspace_picker()
