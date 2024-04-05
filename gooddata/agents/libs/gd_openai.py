@@ -1,12 +1,11 @@
 import os
 from enum import Enum
 from typing import Optional
-from dotenv import load_dotenv
 
-from openai import OpenAI
+from dotenv import load_dotenv
 from langchain.chains import ConversationChain
 from langchain.chat_models import ChatOpenAI
-from langchain_openai import ChatOpenAI
+from openai import OpenAI
 
 from gooddata.agents.libs.utils import timeit
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
@@ -60,13 +59,6 @@ class GoodDataOpenAICommon:
             kwargs["openai_organization"] = self.openai_organization
         return kwargs
 
-    @property
-    def openai_chat_credential_kwargs(self) -> dict:
-        return {
-            "api_key": self.openai_api_key,
-            "organization": self.openai_organization,
-        }
-
     def get_chat_llm_model(self):
         return ChatOpenAI(**self.openai_kwargs)
 
@@ -91,7 +83,6 @@ class GoodDataOpenAICommon:
         function_name: Optional[str] = None,
     ):
         kwargs = {
-            **self.openai_chat_credential_kwargs,
             "model": self.openai_model,
             "messages": [
                 {"role": "system", "content": system_prompt},

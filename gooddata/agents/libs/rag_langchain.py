@@ -1,22 +1,20 @@
-from typing import Optional
 from operator import itemgetter
+from typing import Optional
 
 from langchain.chat_models import ChatOpenAI
-from langchain_community.vectorstores import FAISS
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableLambda, RunnablePassthrough
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
-from langchain_core.prompts import format_document
-from langchain_core.runnables import RunnableParallel
-from langchain.prompts.prompt import PromptTemplate
 from langchain.memory import ConversationBufferMemory
+from langchain.prompts.prompt import PromptTemplate
+from langchain_community.vectorstores import FAISS
+from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate, format_document
+from langchain_core.runnables import RunnableLambda, RunnableParallel, RunnablePassthrough
+from langchain_openai import OpenAIEmbeddings
 
 from gooddata.agents.libs.gd_openai import GoodDataOpenAICommon
 from gooddata.agents.libs.utils import timeit
 
-_template = """Given the following conversation and a follow up question, 
+_template = """Given the following conversation and a follow up question,
 rephrase the follow up question to be a standalone question, in its original language.
 
 Chat History:
@@ -28,12 +26,12 @@ CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(_template)
 template = """
 You are expert for GoodData Phoenix.
 You answer only questions related to GoodData Phoenix.
-You answer "I can answer only questions related to GoodData" if you get question not related to GoodData Phoenix. 
+You answer "I can answer only questions related to GoodData" if you get question not related to GoodData Phoenix.
 
 Answer the question based only on the following context:
 {context}
 
-Question: 
+Question:
 {question}
 """
 # Answer in the following language: {language}
@@ -66,14 +64,11 @@ class GoodDataRAGCommon:
 
     @timeit
     def get_rag_retriever(self, rag_docs: list[str]):
-        vectorstore = FAISS.from_texts(
-            rag_docs, embedding=OpenAIEmbeddings()
-        )
+        vectorstore = FAISS.from_texts(rag_docs, embedding=OpenAIEmbeddings())
         return vectorstore.as_retriever()
 
 
 class GoodDataRAGSimple(GoodDataRAGCommon):
-
     @timeit
     def get_rag_chain(self, rag_retriever):
         return (
@@ -92,9 +87,7 @@ class GoodDataRAGHistory(GoodDataRAGCommon):
     @timeit
     def get_rag_chain_with_history(self, rag_retriever):
         _inputs = RunnableParallel(
-            standalone_question=RunnablePassthrough.assign(
-                chat_history=lambda x: get_buffer_string(x["chat_history"])
-            )
+            standalone_question=RunnablePassthrough.assign(chat_history=lambda x: get_buffer_string(x["chat_history"]))
             | CONDENSE_QUESTION_PROMPT
             | self.openai_chat_model
             | StrOutputParser(),
@@ -108,15 +101,14 @@ class GoodDataRAGHistory(GoodDataRAGCommon):
 
     @timeit
     def rag_chain_with_history_invoke(self, rag_retriever, question: str, chat_history: list[tuple[str, str]]):
-        chat_history_ai = [
-            (HumanMessage(content=human), AIMessage(content=ai))
-            for human, ai in chat_history
-        ]
-        self.get_rag_chain_with_history(rag_retriever).invoke({
-            "question": question,
-            "chat_history": chat_history_ai,
-            # "language": self.rag_language,
-        })
+        chat_history_ai = [(HumanMessage(content=human), AIMessage(content=ai)) for human, ai in chat_history]
+        self.get_rag_chain_with_history(rag_retriever).invoke(
+            {
+                "question": question,
+                "chat_history": chat_history_ai,
+                # "language": self.rag_language,
+            }
+        )
 
     @timeit
     def reset_rag_chain_context(self, docs: list[str]):
@@ -144,9 +136,7 @@ class GoodDataRAGHistoryMemory(GoodDataRAGCommon):
     @timeit
     @property
     def conversational_memory(self):
-        return ConversationBufferMemory(
-            return_messages=True, output_key="answer", input_key="question"
-        )
+        return ConversationBufferMemory(return_messages=True, output_key="answer", input_key="question")
 
     @timeit
     def rag_chain_with_memory(self, rag_retriever):
@@ -158,8 +148,8 @@ class GoodDataRAGHistoryMemory(GoodDataRAGCommon):
         # Now we calculate the standalone question
         standalone_question = {
             "standalone_question": {
-               "question": lambda x: x["question"],
-               "chat_history": lambda x: get_buffer_string(x["chat_history"]),
+                "question": lambda x: x["question"],
+                "chat_history": lambda x: get_buffer_string(x["chat_history"]),
             }
             | CONDENSE_QUESTION_PROMPT
             | self.openai_chat_model
@@ -188,10 +178,12 @@ class GoodDataRAGHistoryMemory(GoodDataRAGCommon):
     @timeit
     def rag_chain_with_memory_invoke(self, question: str):
         inputs = {"question": question}
-        result = self.rag_chain_with_memory.invoke({
-            "question": question,
-            # "language": self.rag_language,
-        })
+        result = self.rag_chain_with_memory.invoke(
+            {
+                "question": question,
+                # "language": self.rag_language,
+            }
+        )
         answer = result["answer"].content
         self.rag_conversational_memory.save_context(inputs, {"answer": answer})
         return answer
