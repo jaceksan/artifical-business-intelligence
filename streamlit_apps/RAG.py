@@ -1,11 +1,12 @@
 import os
-from typing import Optional
+import attr
 
 import openai
 import streamlit as st
 from streamlit_chat import message
 
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
+from gooddata_sdk import CatalogDeclarativeModel, CatalogDeclarativeAnalytics
 from gooddata.agents.libs.rag_langchain import timeit, GoodDataRAGSimple
 
 
@@ -30,16 +31,22 @@ class GoodDataRAGApp:
         if "past" not in st.session_state:
             st.session_state["past"] = []
 
-        rag_docs = get_gooddata_full_catalog(self.gd_sdk, self.workspace_id)
-        if rag_docs is None or len(rag_docs) == 0:
+        catalog = get_gooddata_full_catalog(self.gd_sdk, self.workspace_id)
+        if catalog.documents is None or len(catalog.documents) == 0:
             st.error(
                 f"Picked GoodData workspace with ID={self.workspace_id} does not contain any objects. "
                 "Please select another workspace."
             )
         else:
+            st.markdown(f"""
+- Dataset count: {len(catalog.ldm.ldm.datasets)}
+- Date Dataset count: {len(catalog.ldm.ldm.date_instances)}
+- Attribute count: {sum([len(d.attributes) for d in catalog.ldm.ldm.datasets])}
+- Fact count: {sum([len(d.facts) for d in catalog.ldm.ldm.datasets])}
+""")
             try:
                 agent = self._get_agent()
-                rag_retriever = load_vector_store(agent, rag_docs)
+                rag_retriever = load_vector_store(agent, catalog.documents)
 
                 question = st.text_area("Ask GoodData a question:")
 
@@ -68,9 +75,16 @@ def load_vector_store(_agent, rag_docs: list[str]):
     return _agent.get_rag_retriever(rag_docs)
 
 
+@attr.s(auto_attribs=True, kw_only=True)
+class GoodDataCatalog:
+    documents: list[str]
+    ldm: CatalogDeclarativeModel
+    adm: CatalogDeclarativeAnalytics
+
+
 @st.cache_data
 @timeit
-def get_gooddata_full_catalog(_gd_sdk: GoodDataSdkWrapper, workspace_id: str) -> list[str]:
+def get_gooddata_full_catalog(_gd_sdk: GoodDataSdkWrapper, workspace_id: str) -> GoodDataCatalog:
     ldm = _gd_sdk.sdk.catalog_workspace_content.get_declarative_ldm(workspace_id)
     adm = _gd_sdk.sdk.catalog_workspace_content.get_declarative_analytics_model(workspace_id)
     metrics = adm.analytics.metrics
@@ -113,4 +127,4 @@ def get_gooddata_full_catalog(_gd_sdk: GoodDataSdkWrapper, workspace_id: str) ->
     for i, document in enumerate(documents):
         with open(f"tmp/RAG/{i}.txt", "w") as f:
             f.write(document)
-    return documents
+    return GoodDataCatalog(documents=documents, ldm=ldm, adm=adm)
