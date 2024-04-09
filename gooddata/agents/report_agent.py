@@ -134,11 +134,8 @@ class ReportAgent(GoodDataOpenAICommon):
         file_path = file_dir / file_name
         with open(file_path, "w") as fp:
             fp.write(f"{self.get_open_ai_sys_msg()}\n")
-            ws_content = self.gd_sdk.sdk.catalog_workspace_content.get_full_catalog(self.workspace_id)
-            metrics_list = [[m.id, m.title] for m in ws_content.metrics]
-            attribute_list = [[a.id, a.title] for a in ws_content.attributes]
-            fp.write(f"Metrics: {str(metrics_list)}\n")
-            fp.write(f"Attributes: {str(attribute_list)}\n")
+            fp.write(f"Metrics: {self.gd_sdk.metrics_string(self.workspace_id)}\n")
+            fp.write(f"Attributes: {self.gd_sdk.attributes_string(self.workspace_id)}\n")
         return TextLoader(str(file_path))
 
     def ask_langchain_open_ai(self, question: str) -> str:

@@ -41,22 +41,23 @@ class GoodDataSdkWrapper:
     def wait_for_gooddata_is_up(self) -> None:
         self.sdk.support.wait_till_available(timeout=self.timeout)
 
-    def metrics(self, workspace_id: str) -> list[list[str, str]]:
+    def metrics(self, workspace_id: str) -> list[tuple[str, str]]:
         # TODO - cache the SDK call
-        return [
-            [metric.id, metric.title]
-            for metric in self.sdk.catalog_workspace_content.get_metrics_catalog(workspace_id=workspace_id)
-        ]
+        metric_catalog = self.sdk.catalog_workspace_content.get_metrics_catalog(workspace_id=workspace_id)
+        return [(metric.id, metric.title) for metric in metric_catalog]
+
+    def facts(self, workspace_id: str) -> list[tuple[str, str]]:
+        # TODO - cache the SDK call
+        fact_catalog = self.sdk.catalog_workspace_content.get_facts_catalog(workspace_id=workspace_id)
+        return [(fact.id, fact.title) for fact in fact_catalog]
 
     def metrics_string(self, workspace_id: str) -> str:
         return str(self.metrics(workspace_id))
 
-    def attributes(self, workspace_id: str) -> list[list[str, str]]:
+    def attributes(self, workspace_id: str) -> list[tuple[str, str]]:
         # TODO - cache the SDK call
-        return [
-            [attr.id, attr.title]
-            for attr in self.sdk.catalog_workspace_content.get_attributes_catalog(workspace_id=workspace_id)
-        ]
+        attribute_catalog = self.sdk.catalog_workspace_content.get_attributes_catalog(workspace_id=workspace_id)
+        return [(attr.id, attr.title) for attr in attribute_catalog]
 
     def attributes_string(self, workspace_id: str) -> str:
         return str(self.attributes(workspace_id))
