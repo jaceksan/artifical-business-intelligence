@@ -1,52 +1,62 @@
+from enum import Enum
 from operator import itemgetter
 from typing import Optional
+import lancedb
+import duckdb
+import pyarrow as pa
+import attr
 
-from langchain.chat_models import ChatOpenAI
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts.prompt import PromptTemplate
-from langchain_community.vectorstores import FAISS
 from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, format_document
-from langchain_core.runnables import RunnableLambda, RunnableParallel, RunnablePassthrough
-from langchain_openai import OpenAIEmbeddings
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from gooddata.agents.libs.vector_stores.lancedb_custom import CustomLanceDB
+from langchain_community.vectorstores import DuckDB
+from langchain.globals import set_debug
+from langchain_core.documents import Document
+
 
 from gooddata.agents.libs.gd_openai import GoodDataOpenAICommon
-from gooddata.agents.libs.utils import timeit
+from gooddata.agents.libs.utils import timeit, debug_to_file
 
-_template = """Given the following conversation and a follow up question,
-rephrase the follow up question to be a standalone question, in its original language.
+PRODUCT_NAME = "GoodData Cloud"
+DEFAULT_MAX_SEARCH_RESULTS = 5
+DB_URL_TEMPLATE = "tmp/{org_id}.{db_type}"
+LANCEDB_TABLE_SCHEMA = pa.schema([
+    # TODO - 1536 works only for OpenAI
+    pa.field("vector", pa.list_(pa.float32(), 1536)),
+    pa.field("id", pa.string()),
+    pa.field("title", pa.string()),
+    pa.field("object_type", pa.string()),
+    pa.field("workspace_id", pa.string()),
+    pa.field("text", pa.string()),
+])
 
-Chat History:
-{chat_history}
-Follow Up Input: {question}
-Standalone question:"""
-CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(_template)
 
-template = """
-You are expert for GoodData Phoenix.
-You answer only questions related to GoodData Phoenix.
-You answer "I can answer only questions related to GoodData" if you get question not related to GoodData Phoenix.
+@attr.s(auto_attribs=True, kw_only=True)
+class DBParams:
+    name: str
+    db_library: any
+    langchain_library: any
 
-Answer the question based only on the following context:
-{context}
 
-Question:
-{question}
-"""
-# Answer in the following language: {language}
-ANSWER_PROMPT = ChatPromptTemplate.from_template(template)
-DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}")
+class VectorDB(Enum):
+    LANCEDB = DBParams(name="LanceDB", db_library=lancedb, langchain_library=CustomLanceDB)
+    DUCKDB = DBParams(name="DuckDB", db_library=duckdb, langchain_library=DuckDB)
 
 
 class GoodDataRAGCommon:
     def __init__(
         self,
+        org_id: str,
+        workspace_id: str,
+        vector_db: VectorDB,
         openai_model: str = "gpt-3.5-turbo-0613",
         openai_api_key: Optional[str] = None,
         openai_organization: Optional[str] = None,
         temperature: int = 0,
-        workspace_id: str = None,
+        max_search_results: int = DEFAULT_MAX_SEARCH_RESULTS,
     ) -> None:
         self.gd_openai = GoodDataOpenAICommon(
             openai_model=openai_model,
@@ -54,41 +64,164 @@ class GoodDataRAGCommon:
             openai_organization=openai_organization,
             temperature=temperature,
             workspace_id=workspace_id,
+            org_id=org_id,
         )
+        self.max_search_results = max_search_results
         self.openai_chat_model = self.gd_openai.get_chat_llm_model()
+        self.vector_db = vector_db
+        # Add prefix to prevent issues with DBs which do not support table names starting with numbers
+        self.vector_db_table_name = f"ws_{workspace_id}"
+
+    # TODO - other databases. QDrant, Milvus, Weaviate, PostgreSQL
+    # TODO - add any indexes?
+    def connect_to_db(self):
+        return self.vector_db.value.db_library.connect(
+            DB_URL_TEMPLATE.format(
+                org_id=self.gd_openai.org_id,
+                db_type=self.vector_db.name
+            )
+        )
+
+    def connect_to_table(self, db_conn, table_name: str):
+        # TODO - try to load docs everytime, update only changed rows
+        if self.vector_db == VectorDB.LANCEDB:
+            open_func = db_conn.open_table
+        elif self.vector_db == VectorDB.DUCKDB:
+            open_func = db_conn.table
+        else:
+            raise NotImplementedError(f"Database {self.vector_db.name} is not supported")
+        try:
+            print(f"Opening table {table_name}")
+            return open_func(table_name), False
+        except Exception:
+            # TODO - better not that broad Exception
+            print(f"Opening table {table_name} failed, creating new table")
+            if self.vector_db == VectorDB.DUCKDB:
+                # Table is created implicitly, no need to take care of it
+                return None, True
+            elif self.vector_db == VectorDB.LANCEDB:
+                return db_conn.create_table(
+                    table_name,
+                    schema=LANCEDB_TABLE_SCHEMA,
+                    mode="overwrite",
+                    exist_ok=True
+                ), True
 
     @staticmethod
-    def _combine_documents(docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, document_separator="\n\n"):
-        doc_strings = [format_document(doc, document_prompt) for doc in docs]
-        return document_separator.join(doc_strings)
+    def debug_documents(documents: list[Document]):
+        docs_str = "\n".join(
+            [
+                f"""Metadata:\n{str(r.metadata)}\n\nContent:\n{r.page_content}"""
+                for r in documents
+            ]
+        )
+        debug_to_file("rag_docs.txt", docs_str)
+
+    def init_vector_store_duckdb(self, documents: list[Document], db_conn):
+        _, is_new = self.connect_to_table(db_conn, self.vector_db_table_name)
+        if is_new:
+            return self.vector_db.value.langchain_library.from_documents(
+                documents,
+                connection=db_conn,
+                table_name=self.vector_db_table_name,
+                embedding=OpenAIEmbeddings(),
+                vector_key="embedding",
+            )
+        else:
+            return self.vector_db.value.langchain_library(
+                connection=db_conn,
+                table_name=self.vector_db_table_name,
+                embedding=OpenAIEmbeddings(),
+                vector_key="embedding",
+            )
+
+    def init_vector_store_lancedb(self, documents: list[Document], db_conn):
+        connection_to_table, is_new = self.connect_to_table(db_conn, self.vector_db_table_name)
+        if is_new:
+            return self.vector_db.value.langchain_library.from_documents(
+                documents=documents,
+                embedding=OpenAIEmbeddings(),
+                connection=connection_to_table
+            )
+        else:
+            return self.vector_db.value.langchain_library(
+                embedding=OpenAIEmbeddings(),
+                connection=connection_to_table
+            )
 
     @timeit
-    def get_rag_retriever(self, rag_docs: list[str]):
-        vectorstore = FAISS.from_texts(rag_docs, embedding=OpenAIEmbeddings())
-        return vectorstore.as_retriever()
+    def init_vector_store(self, documents: list[Document]):
+        self.debug_documents(documents)
+        db_conn = self.connect_to_db()
+        if self.vector_db == VectorDB.DUCKDB:
+            return self.init_vector_store_duckdb(documents, db_conn)
+        elif self.vector_db == VectorDB.LANCEDB:
+            return self.init_vector_store_lancedb(documents, db_conn)
+        else:
+            raise NotImplementedError(f"Database {self.vector_db.name} is not supported")
+
+    def drop_table(self, db_conn):
+        if self.vector_db == VectorDB.DUCKDB:
+            db_conn.sql(f"""DROP TABLE "{self.vector_db_table_name}";""")
+        elif self.vector_db == VectorDB.LANCEDB:
+            db_conn.drop_table(self.vector_db_table_name)
+        else:
+            raise NotImplementedError(f"Database {self.vector_db.name} is not supported")
+
+    @timeit
+    def get_rag_retriever(self, vector_store):
+        return vector_store.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": self.max_search_results}
+        )
+
+    def similarity_search(self, vector_store, query: str):
+        # TODO - use direct select from the table? How to embed correct vectors?
+        #  Would allow to use filters before doing similarity search!
+        #  Note: some DBs do not support filtering on metadata columns yet, e.g. DuckDB
+        #  Some support it only with LlamaIndex
+        # TODO: using retriever here to accept custom Retriever implementations for both RAG and pure similarity search
+        return self.get_rag_retriever(vector_store).get_relevant_documents(query)
+        # return vector_store.similarity_search(query, k=self.max_search_results)
+
+    @staticmethod
+    def _combine_documents(docs, document_prompt, document_separator="\n\n"):
+        doc_strings = [format_document(doc, document_prompt) for doc in docs]
+        return document_separator.join(doc_strings)
 
 
 class GoodDataRAGSimple(GoodDataRAGCommon):
     @timeit
-    def get_rag_chain(self, rag_retriever):
+    def get_rag_chain(
+        self,
+        rag_retriever,
+        answer_prompt: str,
+    ):
+        debug_to_file("answer_prompt.txt", answer_prompt)
         return (
             {"context": rag_retriever, "question": RunnablePassthrough()}
-            | ANSWER_PROMPT
+            | ChatPromptTemplate.from_template(answer_prompt)
             | self.openai_chat_model
             | StrOutputParser()
         )
 
     @timeit
-    def rag_chain_invoke(self, rag_retriever, question: str):
-        return self.get_rag_chain(rag_retriever).invoke(question)
+    def rag_chain_invoke(
+        self,
+        rag_retriever,
+        question: str,
+        answer_prompt: str,
+    ):
+        set_debug(True)
+        return self.get_rag_chain(rag_retriever, answer_prompt).invoke(question)
 
 
 class GoodDataRAGHistory(GoodDataRAGCommon):
     @timeit
-    def get_rag_chain_with_history(self, rag_retriever):
+    def get_rag_chain_with_history(self, rag_retriever, condense_question_prompt, chat_template):
         _inputs = RunnableParallel(
             standalone_question=RunnablePassthrough.assign(chat_history=lambda x: get_buffer_string(x["chat_history"]))
-            | CONDENSE_QUESTION_PROMPT
+            | ChatPromptTemplate.from_template(condense_question_prompt)
             | self.openai_chat_model
             | StrOutputParser(),
         )
@@ -96,7 +229,12 @@ class GoodDataRAGHistory(GoodDataRAGCommon):
             "context": itemgetter("standalone_question") | rag_retriever | self._combine_documents,
             "question": lambda x: x["standalone_question"],
         }
-        conversational_qa_chain = _inputs | _context | ANSWER_PROMPT | ChatOpenAI()
+        conversational_qa_chain = (
+            _inputs
+            | _context
+            | ChatPromptTemplate.from_template(chat_template)
+            | ChatOpenAI()
+        )
         return conversational_qa_chain
 
     @timeit
@@ -109,85 +247,3 @@ class GoodDataRAGHistory(GoodDataRAGCommon):
                 # "language": self.rag_language,
             }
         )
-
-    @timeit
-    def reset_rag_chain_context(self, docs: list[str]):
-        return self.get_rag_retriever(docs)
-
-
-class GoodDataRAGHistoryMemory(GoodDataRAGCommon):
-    def __init__(
-        self,
-        openai_model: str = "gpt-3.5-turbo-0613",
-        openai_api_key: Optional[str] = None,
-        openai_organization: Optional[str] = None,
-        temperature: int = 0,
-        workspace_id: str = None,
-    ) -> None:
-        super().__init__(
-            openai_model=openai_model,
-            openai_api_key=openai_api_key,
-            openai_organization=openai_organization,
-            temperature=temperature,
-            workspace_id=workspace_id,
-        )
-        self.rag_conversational_memory = self.conversational_memory
-
-    @timeit
-    @property
-    def conversational_memory(self):
-        return ConversationBufferMemory(return_messages=True, output_key="answer", input_key="question")
-
-    @timeit
-    def rag_chain_with_memory(self, rag_retriever):
-        # First we add a step to load memory
-        # This adds a "memory" key to the input object
-        loaded_memory = RunnablePassthrough.assign(
-            chat_history=RunnableLambda(self.rag_conversational_memory.load_memory_variables) | itemgetter("history"),
-        )
-        # Now we calculate the standalone question
-        standalone_question = {
-            "standalone_question": {
-                "question": lambda x: x["question"],
-                "chat_history": lambda x: get_buffer_string(x["chat_history"]),
-            }
-            | CONDENSE_QUESTION_PROMPT
-            | self.openai_chat_model
-            | StrOutputParser(),
-        }
-        # Now we retrieve the documents
-        retrieved_documents = {
-            "docs": itemgetter("standalone_question") | rag_retriever,
-            "question": lambda x: x["standalone_question"],
-        }
-        # Now we construct the inputs for the final prompt
-        final_inputs = {
-            "context": lambda x: self._combine_documents(x["docs"]),
-            "question": itemgetter("question"),
-            # "language": itemgetter("language"),
-        }
-        # And finally, we do the part that returns the answers
-        answer = {
-            "answer": final_inputs | ANSWER_PROMPT | self.openai_chat_model,
-            "docs": itemgetter("docs"),
-        }
-        # And now we put it all together!
-        final_chain = loaded_memory | standalone_question | retrieved_documents | answer
-        return final_chain
-
-    @timeit
-    def rag_chain_with_memory_invoke(self, question: str):
-        inputs = {"question": question}
-        result = self.rag_chain_with_memory.invoke(
-            {
-                "question": question,
-                # "language": self.rag_language,
-            }
-        )
-        answer = result["answer"].content
-        self.rag_conversational_memory.save_context(inputs, {"answer": answer})
-        return answer
-
-    @timeit
-    def rag_chain_with_memory_reset(self):
-        self.rag_conversational_memory.clear()

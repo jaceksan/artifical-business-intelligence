@@ -5,8 +5,8 @@ from pathlib import Path
 import pandas as pd
 from gooddata_sdk import Attribute, ObjId, SimpleMetric
 from langchain.chains import RetrievalQA
-from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import TextLoader
+from langchain_openai import ChatOpenAI
+from langchain_community.document_loaders import TextLoader
 from langchain.indexes import VectorstoreIndexCreator
 
 from gooddata.agents.libs.gd_openai import GoodDataOpenAICommon, AIMethod

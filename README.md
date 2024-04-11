@@ -71,6 +71,13 @@ Q: Sum of count of commits where repository name is like "gooddata"
 A: SELECT SUM({metric/commit_count}) WHERE {label/repository_name} LIKE "%gooddata%"
 ```
 
+### RAG
+Retrieval Augmented Generation "agent".
+Currently it provides only search use case in 3 variants:
+- Naive - whole workspace context is sent to LLM
+- Vector search - search in vector store
+- RAG - search in vector store to reduce context in prompt, call LLM with the prompt
+
 ## TODO
 1. On-premise LLM as an alternative
 2. Procedure to train OpenAI organization and utilize the new model created by OpenAI

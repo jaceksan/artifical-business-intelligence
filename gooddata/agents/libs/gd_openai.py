@@ -4,7 +4,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from langchain.chains import ConversationChain
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from openai import OpenAI
 
 from gooddata.agents.libs.utils import timeit
@@ -26,11 +26,13 @@ class AIModel(Enum):
 class GoodDataOpenAICommon:
     def __init__(
         self,
+        gd_sdk: GoodDataSdkWrapper = None,  # Some agents do not need GoodDataSdk
         openai_model: str = "gpt-3.5-turbo-0613",
         openai_api_key: Optional[str] = None,
         openai_organization: Optional[str] = None,
         temperature: int = 0,
         workspace_id: str = None,
+        org_id: str = None,
     ) -> None:
         load_dotenv()
         self.openai_model = openai_model
@@ -42,9 +44,10 @@ class GoodDataOpenAICommon:
         )
         self.temperature = temperature
         self.workspace_id = workspace_id
+        self.org_id = org_id
 
         self.unique_prefix = f"GOODDATA_PHOENIX::{self.workspace_id}"
-        self.gd_sdk = GoodDataSdkWrapper()
+        self.gd_sdk = gd_sdk
 
         self.chain = self.get_conversation_chain()
 

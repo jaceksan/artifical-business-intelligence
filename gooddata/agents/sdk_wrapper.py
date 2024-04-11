@@ -6,7 +6,10 @@ from gooddata_sdk import GoodDataSdk
 
 
 class GoodDataSdkWrapper:
-    def __init__(self, timeout: int = 600) -> None:
+    def __init__(
+        self, profile: Optional[str] = None, timeout: int = 10
+    ) -> None:
+        self.profile = profile
         self.timeout = timeout
         self.sdk = self.create_sdk()
         self.pandas = self.create_pandas()
@@ -32,8 +35,18 @@ class GoodDataSdkWrapper:
         return kwargs
 
     def create_sdk(self) -> GoodDataSdk:
-        sdk = GoodDataSdk.create(host_=self.host, token_=self.token, **self.conn_kwargs)
-        return sdk
+        if self.profile:
+            print(f"Connecting to GoodData using profile={self.profile}")
+            sdk = GoodDataSdk.create_from_profile(profile=self.profile)
+            return sdk
+        else:
+            kwargs = {}
+            if self.override_host:
+                kwargs["Host"] = self.override_host
+            masked_token = f"{len(self.token[:-4]) * '#'}{self.token[-4:]}"
+            print(f"Connecting to GoodData host={self.host} token={masked_token} override_host={self.override_host}")
+            sdk = GoodDataSdk.create(host_=self.host, token_=self.token, **kwargs)
+            return sdk
 
     def create_pandas(self) -> GoodPandas:
         return GoodPandas(self.host, self.token, **self.conn_kwargs)

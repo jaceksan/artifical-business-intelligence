@@ -1,0 +1,7 @@
+---------------------------------
+internalbi, GoodBusiness PROD:
+---------------------------------
+Simple search:
+  usage
+RAG:
+  Find metrics related to opportunities
