@@ -30,7 +30,8 @@ class GoodDataAgentsDemo:
         self.args = self.parse_arguments()
         load_dotenv()
         OpenAI.api_key = os.getenv("OPENAI_API_KEY")
-        self.gd_sdk = GoodDataSdkWrapper()
+        print(f"Profile={self.args.profile}")
+        self.gd_sdk = GoodDataSdkWrapper(profile=self.args.profile)
         st.set_page_config(layout="wide", page_icon="favicon.ico", page_title="Talk to GoodData")
         self.render_workspace_picker()
         self._app_chat = None
@@ -48,6 +49,9 @@ class GoodDataAgentsDemo:
             description="Talk to GoodData",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
+        parser.add_argument("-p", "--profile",
+                            help="GoodData profile from ~/.gooddata/profiles.yaml to be used",
+                            default="default")
         return parser.parse_args()
 
     @staticmethod
@@ -87,7 +91,7 @@ class GoodDataAgentsDemo:
 
     @staticmethod
     def render_openai_models_picker():
-        default_model = "gpt-3.5-turbo-0613"
+        default_model = "gpt-3.5-turbo-1106"
         if "openai_model" not in st.session_state:
             st.session_state["openai_model"] = default_model
         models = get_supported_models()
@@ -132,7 +136,7 @@ def get_supported_models() -> list[str]:
         api_key=st.session_state.openai_api_key,
         organization=st.session_state.openai_organization,
     )
-    return [m.id for m in client.models.list().data]
+    return sorted([m.id for m in client.models.list().data])
 
 
 @st.cache_data

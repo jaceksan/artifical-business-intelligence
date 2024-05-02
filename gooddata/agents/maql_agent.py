@@ -4,8 +4,6 @@ from gooddata.tools import TMP_DIR, create_dir
 
 class MaqlAgent(GoodDataOpenAICommon):
     def get_open_ai_sys_msg(self) -> str:
-        catalog = self.gd_sdk.sdk.catalog_workspace_content.get_full_catalog(self.workspace_id)
-
         sys_msg = f"""
 You are a data engineer writing metrics also known as measures in MAQL language.
 You exclusively use the following description of MAQL language.
@@ -43,12 +41,12 @@ Answer: SELECT {{metric/revenue}} FOR Previous({{attribute/year}}, 3)
 
 Here is the list of available entities:
 """
-        facts = "Facts:\n" + '\n'.join([f"- Fact with ID {f.id} is described as '{f.title}'" for f in catalog.facts])
+        facts = "Facts:\n" + '\n'.join([f"- Fact with ID {f[0]} is described as '{f[1]}'" for f in self.gd_sdk.facts])
         attributes = "Attributes:\n" + '\n'.join(
-            [f"- Attribute with ID {a.id} is described as '{a.title}'" for a in catalog.attributes]
+            [f"- Attribute with ID {a[0]} is described as '{a[1]}'" for a in self.gd_sdk.attributes]
         )
         metrics = "Metrics:\n" + '\n'.join(
-            [f"- Metric with ID {f.id} is described as '{f.title}'" for f in catalog.metrics]
+            [f"- Metric with ID {m[0]} is described as '{m[1]}'" for m in self.gd_sdk.metrics]
         )
         sys_msg += f"{facts}\n\n{attributes}\n\n{metrics}"
         create_dir(TMP_DIR)

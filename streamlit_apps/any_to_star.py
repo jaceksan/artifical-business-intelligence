@@ -10,6 +10,7 @@ class GoodDataAnyToStarApp:
     def __init__(self, gd_sdk: GoodDataSdkWrapper) -> None:
         self.gd_sdk = gd_sdk
         self.agent = GoodDataAnyToStarAgent(
+            gd_sdk=gd_sdk,
             openai_model=st.session_state.openai_model,
             openai_api_key=st.session_state.openai_api_key,
             openai_organization=st.session_state.openai_organization,
