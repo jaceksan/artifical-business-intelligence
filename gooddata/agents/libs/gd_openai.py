@@ -4,7 +4,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from langchain.chains import ConversationChain
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from openai import OpenAI
 
 from gooddata.agents.libs.utils import timeit
@@ -64,6 +64,9 @@ class GoodDataOpenAICommon:
 
     def get_chat_llm_model(self):
         return ChatOpenAI(**self.openai_kwargs)
+
+    def get_llm_embeddings(self):
+        return OpenAIEmbeddings(**self.openai_kwargs)
 
     def get_conversation_chain(self) -> ConversationChain:
         llm = ChatOpenAI(**self.openai_kwargs)

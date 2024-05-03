@@ -66,8 +66,8 @@ class GoodDataAgentsDemo:
                 st.session_state.openai_api_key = os.getenv("OPENAI_API_KEY")
                 st.session_state.openai_organization = os.getenv("OPENAI_ORGANIZATION")
             else:
-                token = st.text_input("OpenAI token: ", type="password")
                 organization = st.text_input("OpenAI organization(optional): ")
+                token = st.text_input("OpenAI token: ", type="password")
                 if st.button("Save"):
                     st.session_state.openai_api_key = token
                     st.session_state.openai_organization = organization

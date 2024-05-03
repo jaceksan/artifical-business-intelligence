@@ -1,6 +1,5 @@
 from enum import Enum
 from operator import itemgetter
-from typing import Optional
 import lancedb
 import duckdb
 import pyarrow as pa
@@ -10,7 +9,6 @@ from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, format_document
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from gooddata.agents.libs.vector_stores.lancedb_custom import CustomLanceDB
 from langchain_community.vectorstores import DuckDB
 from langchain.globals import set_debug
@@ -52,9 +50,9 @@ class GoodDataRAGCommon:
         org_id: str,
         workspace_id: str,
         vector_db: VectorDB,
+        openai_api_key: str,
+        openai_organization: str,
         openai_model: str = "gpt-3.5-turbo-0613",
-        openai_api_key: Optional[str] = None,
-        openai_organization: Optional[str] = None,
         temperature: int = 0,
         max_search_results: int = DEFAULT_MAX_SEARCH_RESULTS,
     ) -> None:
@@ -71,6 +69,7 @@ class GoodDataRAGCommon:
         self.vector_db = vector_db
         # Add prefix to prevent issues with DBs which do not support table names starting with numbers
         self.vector_db_table_name = f"ws_{workspace_id}"
+        self.openai_embedding = self.gd_openai.get_llm_embeddings()
 
     # TODO - other databases. QDrant, Milvus, Weaviate, PostgreSQL
     # TODO - add any indexes?
@@ -124,14 +123,14 @@ class GoodDataRAGCommon:
                 documents,
                 connection=db_conn,
                 table_name=self.vector_db_table_name,
-                embedding=OpenAIEmbeddings(),
+                embedding=self.openai_embedding,
                 vector_key="embedding",
             )
         else:
             return self.vector_db.value.langchain_library(
                 connection=db_conn,
                 table_name=self.vector_db_table_name,
-                embedding=OpenAIEmbeddings(),
+                embedding=self.openai_embedding,
                 vector_key="embedding",
             )
 
@@ -140,12 +139,12 @@ class GoodDataRAGCommon:
         if is_new:
             return self.vector_db.value.langchain_library.from_documents(
                 documents=documents,
-                embedding=OpenAIEmbeddings(),
+                embedding=self.openai_embedding,
                 connection=connection_to_table
             )
         else:
             return self.vector_db.value.langchain_library(
-                embedding=OpenAIEmbeddings(),
+                embedding=self.openai_embedding,
                 connection=connection_to_table
             )
 
@@ -233,7 +232,7 @@ class GoodDataRAGHistory(GoodDataRAGCommon):
             _inputs
             | _context
             | ChatPromptTemplate.from_template(chat_template)
-            | ChatOpenAI()
+            | self.openai_chat_model
         )
         return conversational_qa_chain
 
