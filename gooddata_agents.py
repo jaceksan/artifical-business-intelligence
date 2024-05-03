@@ -49,9 +49,10 @@ class GoodDataAgentsDemo:
             description="Talk to GoodData",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
+        # If profile is not provided, the SDK will use GOODDATA_HOST and GOODDATA_TOKEN env variables
         parser.add_argument("-p", "--profile",
                             help="GoodData profile from ~/.gooddata/profiles.yaml to be used",
-                            default="default")
+                            default=None)
         return parser.parse_args()
 
     @staticmethod
