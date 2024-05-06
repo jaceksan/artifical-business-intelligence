@@ -152,7 +152,10 @@ class GoodDataRAGApp:
     def render_reset_db_button(agent: GoodDataRAGSimple):
         if st.button("Reset DB"):
             conn = agent.connect_to_db()
-            agent.drop_table(conn)
+            try:
+                agent.drop_table(conn)
+            except Exception as e:
+                st.write(f"Resetting DB failed: {e}")
 
     @staticmethod
     def render_vector_db_dropdown():
