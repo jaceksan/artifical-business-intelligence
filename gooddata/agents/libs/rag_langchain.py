@@ -2,7 +2,6 @@ from enum import Enum
 from operator import itemgetter
 import lancedb
 import duckdb
-import pyarrow as pa
 import attr
 
 from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
@@ -21,15 +20,6 @@ from gooddata.agents.libs.utils import timeit, debug_to_file
 PRODUCT_NAME = "GoodData Cloud"
 DEFAULT_MAX_SEARCH_RESULTS = 5
 DB_URL_TEMPLATE = "tmp/{org_id}.{db_type}"
-LANCEDB_TABLE_SCHEMA = pa.schema([
-    # TODO - 1536 works only for OpenAI
-    pa.field("vector", pa.list_(pa.float32(), 1536)),
-    pa.field("id", pa.string()),
-    pa.field("title", pa.string()),
-    pa.field("object_type", pa.string()),
-    pa.field("workspace_id", pa.string()),
-    pa.field("text", pa.string()),
-])
 
 
 @attr.s(auto_attribs=True, kw_only=True)
@@ -81,7 +71,7 @@ class GoodDataRAGCommon:
             )
         )
 
-    def connect_to_table(self, db_conn, table_name: str):
+    def connect_to_table(self, db_conn, table_name: str) -> bool:
         # TODO - try to load docs everytime, update only changed rows
         if self.vector_db == VectorDB.LANCEDB:
             open_func = db_conn.open_table
@@ -91,20 +81,12 @@ class GoodDataRAGCommon:
             raise NotImplementedError(f"Database {self.vector_db.name} is not supported")
         try:
             print(f"Opening table {table_name}")
-            return open_func(table_name), False
-        except Exception:
+            open_func(table_name)
+            return True
+        except Exception as e:
             # TODO - better not that broad Exception
-            print(f"Opening table {table_name} failed, creating new table")
-            if self.vector_db == VectorDB.DUCKDB:
-                # Table is created implicitly, no need to take care of it
-                return None, True
-            elif self.vector_db == VectorDB.LANCEDB:
-                return db_conn.create_table(
-                    table_name,
-                    schema=LANCEDB_TABLE_SCHEMA,
-                    mode="overwrite",
-                    exist_ok=True
-                ), True
+            print(f"Opening table {table_name} failed: {e}")
+            return False
 
     @staticmethod
     def debug_documents(documents: list[Document]):
@@ -135,17 +117,19 @@ class GoodDataRAGCommon:
             )
 
     def init_vector_store_lancedb(self, documents: list[Document], db_conn):
-        connection_to_table, is_new = self.connect_to_table(db_conn, self.vector_db_table_name)
-        if is_new:
+        table_exists = self.connect_to_table(db_conn, self.vector_db_table_name)
+        if table_exists:
+            return self.vector_db.value.langchain_library(
+                embedding=self.openai_embedding,
+                table_name=self.vector_db_table_name,
+                connection=db_conn,
+            )
+        else:
             return self.vector_db.value.langchain_library.from_documents(
                 documents=documents,
                 embedding=self.openai_embedding,
-                connection=connection_to_table
-            )
-        else:
-            return self.vector_db.value.langchain_library(
-                embedding=self.openai_embedding,
-                connection=connection_to_table
+                table_name=self.vector_db_table_name,
+                connection=db_conn,
             )
 
     @timeit
