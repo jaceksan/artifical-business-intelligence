@@ -66,7 +66,10 @@ class GoodDataOpenAICommon:
         return ChatOpenAI(**self.openai_kwargs)
 
     def get_llm_embeddings(self):
-        return OpenAIEmbeddings(**self.openai_kwargs)
+        return OpenAIEmbeddings(
+            openai_api_key=self.openai_api_key,
+            openai_organization=self.openai_organization,
+        )
 
     def get_conversation_chain(self) -> ConversationChain:
         llm = ChatOpenAI(**self.openai_kwargs)
