@@ -78,6 +78,11 @@ Currently it provides only search use case in 3 variants:
 - Vector search - search in vector store
 - RAG - search in vector store to reduce context in prompt, call LLM with the prompt
 
+It relies on PRs I created to LangChain fixing both DuckDB and LanceDB LangChain drivers:
+- [DuckDB](https://github.com/langchain-ai/langchain/pull/20971)
+- [LanceDB](https://github.com/langchain-ai/langchain/pull/21252)
+Until these PRs are merged, you need to install LangChain from my fork.
+
 ## TODO
 1. On-premise LLM as an alternative
 2. Procedure to train OpenAI organization and utilize the new model created by OpenAI

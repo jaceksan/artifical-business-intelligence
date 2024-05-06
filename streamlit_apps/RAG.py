@@ -14,6 +14,7 @@ from langchain_core.documents import Document
 from gooddata.agents.libs.utils import debug_to_file, replace_in_string
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 from gooddata.agents.libs.rag_langchain import timeit, GoodDataRAGSimple, PRODUCT_NAME, VectorDB
+from gooddata.tools import get_org_id_from_host
 from streamlit_apps.gooddata.catalog import GoodDataCatalog, get_gooddata_full_catalog
 
 DISTANCE_KEY = "_distance"
@@ -91,7 +92,7 @@ class GoodDataRAGApp:
     def __init__(self, gd_sdk: GoodDataSdkWrapper) -> None:
         self.gd_sdk = gd_sdk
         # TODO - can connect to GD with host:token. Where to get ORG_ID?
-        self.org_id = gd_sdk.profile
+        self.org_id = gd_sdk.profile or get_org_id_from_host(gd_sdk.host)
         self.workspace_id = st.session_state.workspace_id
 
     @staticmethod
@@ -151,7 +152,10 @@ class GoodDataRAGApp:
     def render_reset_db_button(agent: GoodDataRAGSimple):
         if st.button("Reset DB"):
             conn = agent.connect_to_db()
-            agent.drop_table(conn)
+            try:
+                agent.drop_table(conn)
+            except Exception as e:
+                st.write(f"Resetting DB failed: {e}")
 
     @staticmethod
     def render_vector_db_dropdown():
