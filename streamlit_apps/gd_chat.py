@@ -5,22 +5,6 @@ from streamlit_chat import message
 
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
 from gooddata_api_client.model.chat_history_result import ChatHistoryResult
-from gooddata_api_client.model.chat_history_interaction import ChatHistoryInteraction
-
-a = {'interactions': [{'question': 'Hi!', 'chatHistoryInteractionId': 305, 'interactionFinished': True,
-                       'routing': {'useCase': 'GENERAL',
-                                   'reasoning': 'The input is a simple greeting without any specific request for data analysis, visualization, or search, fitting the GENERAL category for simple chatbot interactions.'},
-                       'textResponse': 'Hello there! How can I assist you today?', 'foundObjects': {},
-                       'createdVisualizations': {}},
-                      {'question': 'Hi!', 'chatHistoryInteractionId': 306, 'interactionFinished': True,
-                       'routing': {'useCase': 'GENERAL',
-                                   'reasoning': "The input question 'Hi!' is a simple greeting which falls under general questions or interactions with the chatbot, covered by the GENERAL use case."},
-                       'textResponse': 'Hello! How can I assist you today?', 'foundObjects': {},
-                       'createdVisualizations': {}},
-                      {'question': 'Hi!', 'chatHistoryInteractionId': 307, 'interactionFinished': True,
-                       'routing': {'useCase': 'GENERAL',
-                                   'reasoning': 'The input question is a simple greeting, which falls under basic chatbot functionality covered by the GENERAL use case.'},
-                       'foundObjects': {}, 'createdVisualizations': {}}]}
 
 CHAT_HISTORY = "chat_history"
 LAST_INTERACTION_ID = "last_interaction_id"
