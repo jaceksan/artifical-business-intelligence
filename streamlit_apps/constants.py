@@ -3,6 +3,7 @@ from enum import Enum
 
 class GoodDataAgent(Enum):
     CHAT = "Chat"
+    GD_CHAT = "GoodData AI Chat"
     # PandasAI is no longer supported
     # EXPLAIN_DATA = "Explain data"
     ANY_TO_STAR = "Any to Star Model"

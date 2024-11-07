@@ -14,6 +14,7 @@ from streamlit_apps.any_to_star import GoodDataAnyToStarApp
 from streamlit_apps.api_executor import GoodDataApiExecutorApp
 from streamlit_apps.chat import GoodDataChatApp
 from streamlit_apps.constants import GoodDataAgent
+from streamlit_apps.gd_chat import GoodDataAiChatApp
 
 # from streamlit_apps.explain_report import GoodDataExplainReportApp
 from streamlit_apps.maql import GoodDataMaqlApp
@@ -114,6 +115,8 @@ class GoodDataAgentsDemo:
         if st.session_state.openai_api_key:
             if selected_agent == GoodDataAgent.CHAT:
                 GoodDataChatApp().render()
+            elif selected_agent == GoodDataAgent.GD_CHAT:
+                GoodDataAiChatApp(self.gd_sdk).render()
             elif selected_agent == GoodDataAgent.ANY_TO_STAR:
                 GoodDataAnyToStarApp(self.gd_sdk).render()
             elif selected_agent == GoodDataAgent.REPORT_EXECUTOR:
