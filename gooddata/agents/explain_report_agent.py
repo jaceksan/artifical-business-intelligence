@@ -1,13 +1,12 @@
 from typing import Union
 
 import pandas as pd
-# from pandasai import PandasAI
 
+# from pandasai import PandasAI
 from gooddata.agents.libs.gd_openai import GoodDataOpenAICommon
 
 
 class GoodDataExplainReportAgent(GoodDataOpenAICommon):
-
     # def ask_pandas_ai_agent(self, df: pd.DataFrame, query: str) -> Union[pd.DataFrame, str, int]:
     #     pandas_ai = PandasAI(llm=self.get_chat_llm_model())
     #     return pandas_ai.run(df, prompt=query)

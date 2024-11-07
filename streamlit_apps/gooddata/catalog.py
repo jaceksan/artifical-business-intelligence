@@ -1,13 +1,13 @@
-import attr
 from pathlib import Path
 
+import attr
 import streamlit as st
+from gooddata_sdk import CatalogDeclarativeAnalytics, CatalogDeclarativeModel
+from langchain_core.documents import Document
 
+from gooddata.agents.libs.rag_langchain import PRODUCT_NAME, timeit
 from gooddata.agents.libs.utils import debug_to_file
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
-from gooddata_sdk import CatalogDeclarativeModel, CatalogDeclarativeAnalytics
-from gooddata.agents.libs.rag_langchain import timeit, PRODUCT_NAME
-from langchain_core.documents import Document
 
 
 @attr.s(auto_attribs=True, kw_only=True)
@@ -32,14 +32,17 @@ def create_document(
     content += f"""This {object_type} has ID "{main_object.id}" and title "{main_object.title}".\n"""
     if dependent_object is not None:
         content += (
-            f"""This {object_type} is a part of the standard dataset """ +
-            f"""with ID "{dependent_object.id}" and title "{dependent_object.title}".\n"""
+            f"""This {object_type} is a part of the standard dataset """
+            + f"""with ID "{dependent_object.id}" and title "{dependent_object.title}".\n"""
         )
     return Document(
-        page_content=content, 
+        page_content=content,
         metadata={
-            "workspace_id": workspace_id, "object_type": object_type, "id": main_object.id, "title": main_object.title
-        }
+            "workspace_id": workspace_id,
+            "object_type": object_type,
+            "id": main_object.id,
+            "title": main_object.title,
+        },
     )
 
 
@@ -49,15 +52,15 @@ def generate_description_of_visualization(metrics: list, facts: list, attributes
     attributes_text = "\n".join([f"- Attribute with ID {a}" for a in attributes])
 
     result = ""
-    if metrics_text is not None and metrics_text != '':
+    if metrics_text is not None and metrics_text != "":
         result += f"""
 This visualization contains the following metrics:
 {metrics_text}\n"""
-    if fact_text is not None and fact_text != '':
+    if fact_text is not None and fact_text != "":
         result += f"""
 This visualization contains the following facts:
 {fact_text}\n"""
-    if attributes_text is not None and attributes_text != '':
+    if attributes_text is not None and attributes_text != "":
         result += f"""
 This visualization contains the following attributes:
 {attributes_text}\n"""
@@ -86,7 +89,9 @@ def get_gooddata_full_catalog(_gd_sdk: GoodDataSdkWrapper, workspace_id: str, ba
         for attribute in dataset.attributes:
             document = create_document(workspace_id, "attribute", attribute, dataset)
             if len(attribute.labels) > 0:
-                label_list = "\n".join([f"""- Label with ID {l.id} has title {l.title}""" for l in attribute.labels])
+                label_list = "\n".join(
+                    [f"""- Label with ID {label.id} has title {label.title}""" for label in attribute.labels]
+                )
                 document.page_content += f"""
                 The attribute also contains the following labels:
                 {label_list}
@@ -111,12 +116,13 @@ def get_gooddata_full_catalog(_gd_sdk: GoodDataSdkWrapper, workspace_id: str, ba
                     else:
                         if measure_def["item"]["identifier"]["type"] == "fact":
                             facts.append(
-                                {"id": measure_def["item"]["identifier"]["id"], "agg_function": measure_def["aggregation"]}
+                                {
+                                    "id": measure_def["item"]["identifier"]["id"],
+                                    "agg_function": measure_def["aggregation"],
+                                }
                             )
                         else:
-                            metrics.append(
-                                {"id": measure_def["item"]["identifier"]["id"]}
-                            )
+                            metrics.append({"id": measure_def["item"]["identifier"]["id"]})
                 elif "attribute" in item:
                     attributes.append(item["attribute"]["displayForm"]["identifier"]["id"])
         document.page_content += generate_description_of_visualization(metrics, facts, attributes)

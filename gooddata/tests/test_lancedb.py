@@ -1,17 +1,17 @@
 import os.path
-from typing import Any, ClassVar, Collection
-from langchain_core.pydantic_v1 import Field
-from langchain_community.vectorstores import LanceDB
-from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
-from langchain_core.callbacks import CallbackManagerForRetrieverRun
-from langchain_core.documents import Document
-
-from dotenv import load_dotenv
-import lancedb
-from langchain_openai import OpenAIEmbeddings
 from time import time
+from typing import Any, ClassVar, Collection
+
+import lancedb
+from dotenv import load_dotenv
 from faker import Faker
 from faker.providers import job
+from langchain_community.vectorstores import LanceDB
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Field
+from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from langchain_openai import OpenAIEmbeddings
 
 TABLE_NAME = "embeddings"
 EXCLUDED_METADATA = ["vector"]
@@ -22,6 +22,7 @@ class LanceDBRetriever(VectorStoreRetriever):
     LanceDB custom retriever is required because by default LanceDB returns vectors,
     which we do not want to include into LLM prompt as a context.
     """
+
     vectorstore: VectorStore
     """VectorStore to use for retrieval."""
     search_type: str = "similarity"
@@ -34,22 +35,16 @@ class LanceDBRetriever(VectorStoreRetriever):
         "mmr",
     )
 
-    def _get_relevant_documents(
-            self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> list[Document]:
+    def _get_relevant_documents(self, query: str, *, run_manager: CallbackManagerForRetrieverRun) -> list[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
         elif self.search_type == "similarity_score_threshold":
-            docs_and_similarities = (
-                self.vectorstore.similarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
-                )
+            docs_and_similarities = self.vectorstore.similarity_search_with_relevance_scores(
+                query, **self.search_kwargs
             )
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
-            docs = self.vectorstore.max_marginal_relevance_search(
-                query, **self.search_kwargs
-            )
+            docs = self.vectorstore.max_marginal_relevance_search(query, **self.search_kwargs)
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
 
@@ -74,16 +69,11 @@ Faker.seed(0)
 fake.add_provider(job)
 documents = []
 for i in range(1000):
-    documents.append(
-        Document(
-            page_content=f"{fake.name()} works as a {fake.job()}.",
-            metadata={"id": str(i)}
-        )
-    )
+    documents.append(Document(page_content=f"{fake.name()} works as a {fake.job()}.", metadata={"id": str(i)}))
 
-if os.path.isdir('./tmp') is False:
-    os.makedirs('./tmp')
-db_conn = lancedb.connect('./tmp/test.LANCENDB')
+if os.path.isdir("./tmp") is False:
+    os.makedirs("./tmp")
+db_conn = lancedb.connect("./tmp/test.LANCENDB")
 
 try:
     start_exists = time()
@@ -91,22 +81,23 @@ try:
     print(f"Existing table names: {db_conn.table_names()}")
     table = db_conn.open_table(TABLE_NAME)
     print(table.to_arrow().to_pandas())
-    vector_store = CustomLanceDB(connection=db_conn, table_name=TABLE_NAME, vector_key="vector", embedding=OpenAIEmbeddings())
+    vector_store = CustomLanceDB(
+        connection=db_conn, table_name=TABLE_NAME, vector_key="vector", embedding=OpenAIEmbeddings()
+    )
     print(f"Table exists check took {time() - start_exists} seconds")
 except Exception as e:
     print(f"Table does not exist, create it from documents: {e}")
     start_not_exists = time()
-    CustomLanceDB.from_documents(documents, connection=db_conn, table_name=TABLE_NAME, vector_key="vector", embedding=OpenAIEmbeddings())
+    CustomLanceDB.from_documents(
+        documents, connection=db_conn, table_name=TABLE_NAME, vector_key="vector", embedding=OpenAIEmbeddings()
+    )
     vector_store = CustomLanceDB(connection=db_conn, table_name=TABLE_NAME, embedding=OpenAIEmbeddings())
     print(f"Table does not exist, took {time() - start_not_exists} seconds")
 
 start_search = time()
 query = "Geologist"
 # docs = vector_store.similarity_search(query)
-docs = vector_store.as_retriever(
-    search_type="similarity",
-    search_kwargs={"k": 3}
-).invoke(query)
+docs = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3}).invoke(query)
 
 print(f"Search result: {docs}")
 print(f"Search took {time() - start_search} seconds")

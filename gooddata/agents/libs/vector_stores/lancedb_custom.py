@@ -1,9 +1,10 @@
 from typing import Any, ClassVar, Collection
-from langchain_core.pydantic_v1 import Field
+
 from langchain_community.vectorstores import LanceDB
-from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Field
+from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
 EXCLUDED_METADATA = ["vector"]
 
@@ -13,6 +14,7 @@ class LanceDBRetriever(VectorStoreRetriever):
     LanceDB custom retriever is required because by default LanceDB returns vectors,
     which we do not want to include into LLM prompt as a context.
     """
+
     vectorstore: VectorStore
     """VectorStore to use for retrieval."""
     search_type: str = "similarity"
@@ -25,22 +27,16 @@ class LanceDBRetriever(VectorStoreRetriever):
         "mmr",
     )
 
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> list[Document]:
+    def _get_relevant_documents(self, query: str, *, run_manager: CallbackManagerForRetrieverRun) -> list[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
         elif self.search_type == "similarity_score_threshold":
-            docs_and_similarities = (
-                self.vectorstore.similarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
-                )
+            docs_and_similarities = self.vectorstore.similarity_search_with_relevance_scores(
+                query, **self.search_kwargs
             )
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
-            docs = self.vectorstore.max_marginal_relevance_search(
-                query, **self.search_kwargs
-            )
+            docs = self.vectorstore.max_marginal_relevance_search(query, **self.search_kwargs)
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
 

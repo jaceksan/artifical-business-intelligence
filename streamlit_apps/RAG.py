@@ -1,19 +1,18 @@
+import json
+import re
+from enum import Enum
+from pathlib import Path
+from time import time
 from typing import Optional
 
 import attr
-import json
-import re
-from pathlib import Path
-from time import time
-from enum import Enum
-
 import openai
 import streamlit as st
 from langchain_core.documents import Document
 
+from gooddata.agents.libs.rag_langchain import PRODUCT_NAME, GoodDataRAGSimple, VectorDB, timeit
 from gooddata.agents.libs.utils import debug_to_file, replace_in_string
 from gooddata.agents.sdk_wrapper import GoodDataSdkWrapper
-from gooddata.agents.libs.rag_langchain import timeit, GoodDataRAGSimple, PRODUCT_NAME, VectorDB
 from gooddata.tools import get_org_id_from_host
 from streamlit_apps.gooddata.catalog import GoodDataCatalog, get_gooddata_full_catalog
 
@@ -137,7 +136,9 @@ class GoodDataRAGApp:
     @staticmethod
     def render_rag_enabled_checkbox():
         st.checkbox(
-            label="RAG enabled:", value=True, key="rag_enabled",
+            label="RAG enabled:",
+            value=True,
+            key="rag_enabled",
         )
 
     @staticmethod
@@ -168,7 +169,7 @@ class GoodDataRAGApp:
     @staticmethod
     def extract_json(text: str):
         # Regular expression pattern to find text enclosed in {}
-        pattern = r'(\{.*\})'
+        pattern = r"(\{.*\})"
         # Search the text for the pattern
         if match := re.search(pattern, text, re.S):
             try:
@@ -180,8 +181,8 @@ class GoodDataRAGApp:
     @staticmethod
     def get_response_header(duration_answer):
         return (
-                f"Generation took {duration_answer} ms, rag_enabled = {st.session_state.rag_enabled}, " +
-                f"use_case={st.session_state.rag_use_case}, model={st.session_state.openai_model}"
+            f"Generation took {duration_answer} ms, rag_enabled = {st.session_state.rag_enabled}, "
+            + f"use_case={st.session_state.rag_use_case}, model={st.session_state.openai_model}"
         )
 
     def get_gooddata_full_catalog(self) -> GoodDataCatalog:
@@ -207,16 +208,16 @@ class GoodDataRAGApp:
             st.info(f"Search duration: {result.duration} ms")
         with columns[1]:
             if result.vector_duration is None:
-                st.info(f"Vector store irrelevant in this case")
+                st.info("Vector store irrelevant in this case")
             else:
                 st.info(f"Vector store load duration: {result.vector_duration} ms")
         with columns[2]:
             if result.contains_distance is True or result.contains_score is True:
-                st.info(f"Result contains cosine distance or score")
+                st.info("Result contains cosine distance or score")
             elif result.contains_distance is False and result.contains_score is False:
-                st.warning(f"Result does NOT contain cosine distance or score")
+                st.warning("Result does NOT contain cosine distance or score")
             else:
-                st.info(f"Cosine distance/score irrelevant in this case")
+                st.info("Cosine distance/score irrelevant in this case")
 
         if result.json_response:
             st.json(result.json_response)
@@ -255,16 +256,19 @@ class GoodDataRAGApp:
                 self.render_reset_db_button(agent)
             self.render_header(catalog)
 
-            if (input := st.text_input("Search: ", type="default")):
+            if input := st.text_input("Search: ", type="default"):
                 if st.session_state.rag_use_case == RAGUseCase.NAIVE.value:
                     context = "\n".join([d.page_content for d in catalog.documents])
-                    system_prompt = replace_in_string(SEARCH_SYSTEM_TEMPLATE, {"PRODUCT_NAME": PRODUCT_NAME, "context": context})
-                    user_prompt = replace_in_string(SEARCH_QUESTION_TEMPLATE, {"PRODUCT_NAME": PRODUCT_NAME, "input": input})
+                    system_prompt = replace_in_string(
+                        SEARCH_SYSTEM_TEMPLATE, {"PRODUCT_NAME": PRODUCT_NAME, "context": context}
+                    )
+                    user_prompt = replace_in_string(
+                        SEARCH_QUESTION_TEMPLATE, {"PRODUCT_NAME": PRODUCT_NAME, "input": input}
+                    )
                     debug_to_file("rag_naive.txt", system_prompt + user_prompt, DOCUMENT_DEBUG_PATH)
                     start_answer = time()
                     response_choices = agent.gd_openai.ask_chat_completion(
-                        system_prompt=system_prompt,
-                        user_prompt=user_prompt
+                        system_prompt=system_prompt, user_prompt=user_prompt
                     )
                     response = response_choices.choices[0].message.content
                     result = Result(
@@ -280,7 +284,7 @@ class GoodDataRAGApp:
                         response = agent.similarity_search(vector_store, input)
                         # Vector stores in LangChain do not provide distance or score in an uniform way
                         contains_distance = response[0].metadata.get(DISTANCE_KEY, None) is not None  # LanceDB
-                        contains_score = response[0].metadata.get(SCORE_KEY, None) is not None   # DuckDB
+                        contains_score = response[0].metadata.get(SCORE_KEY, None) is not None  # DuckDB
                         result = Result(
                             use_case=RAGUseCase.VECTOR_SEARCH,
                             raw_response=response,
@@ -296,7 +300,7 @@ class GoodDataRAGApp:
                         response = agent.rag_chain_invoke(
                             rag_retriever=agent.get_rag_retriever(vector_store),
                             question=question,
-                            answer_prompt=replace_in_string(SEARCH_TEMPLATE, {"PRODUCT_NAME": PRODUCT_NAME})
+                            answer_prompt=replace_in_string(SEARCH_TEMPLATE, {"PRODUCT_NAME": PRODUCT_NAME}),
                         )
                         result = Result(
                             use_case=RAGUseCase.RAG,

@@ -6,9 +6,7 @@ from gooddata_sdk import GoodDataSdk
 
 
 class GoodDataSdkWrapper:
-    def __init__(
-        self, profile: Optional[str] = None, timeout: int = 10
-    ) -> None:
+    def __init__(self, profile: Optional[str] = None, timeout: int = 10) -> None:
         self.profile = profile
         self.timeout = timeout
         self.sdk = self.create_sdk()
