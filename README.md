@@ -22,7 +22,7 @@ streamlit run gooddata_agents.py
 ```
 
 ## Agents
-So far all agents connect to OpenAI API.
+So far all agents connect to OpenAI API except GoodData AI Chat, which connects to GoodData AI APIs.
 
 ### Chat
 Provides ChatGPT-like experience.
@@ -82,6 +82,13 @@ It relies on PRs I created to LangChain fixing both DuckDB and LanceDB LangChain
 - [DuckDB](https://github.com/langchain-ai/langchain/pull/20971)
 - [LanceDB](https://github.com/langchain-ai/langchain/pull/21252)
 Until these PRs are merged, you need to install LangChain from my fork.
+
+### GoodData AI Chat
+GoodData exposes AI APIs via Python SDK.
+This agent communicates with GoodData AI Chat API to provide all use cases supported by GoodData AI Chat, e.g.:
+- General conversation
+- Search for any objects
+- Create/extend visualizations
 
 ## TODO
 1. On-premise LLM as an alternative

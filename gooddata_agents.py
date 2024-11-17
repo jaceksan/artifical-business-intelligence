@@ -23,7 +23,7 @@ from streamlit_apps.report_executor import GoodDataReportExecutorApp
 
 # Workaround - when we utilize "key" property in multiselect/selectbox,
 #   a warning is produced if we reset the default value in a custom way
-st.elements.utils._shown_default_value_warning = True
+# st.elements.utils._shown_default_value_warning = True
 
 
 class GoodDataAgentsDemo:
@@ -51,9 +51,9 @@ class GoodDataAgentsDemo:
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         # If profile is not provided, the SDK will use GOODDATA_HOST and GOODDATA_TOKEN env variables
-        parser.add_argument("-p", "--profile",
-                            help="GoodData profile from ~/.gooddata/profiles.yaml to be used",
-                            default=None)
+        parser.add_argument(
+            "-p", "--profile", help="GoodData profile from ~/.gooddata/profiles.yaml to be used", default=None
+        )
         return parser.parse_args()
 
     @staticmethod
@@ -107,10 +107,9 @@ class GoodDataAgentsDemo:
         # render corresponding input fields so users can set them manually
         self.render_openai_key_setting()
         self.render_agent_picker()
-        if st.session_state.openai_api_key:
-            self.render_openai_models_picker()
-
         selected_agent = GoodDataAgent[st.session_state.get("agent")]
+        if st.session_state.openai_api_key and selected_agent != GoodDataAgent.GD_CHAT:
+            self.render_openai_models_picker()
 
         if st.session_state.openai_api_key:
             if selected_agent == GoodDataAgent.CHAT:

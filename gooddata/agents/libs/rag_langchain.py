@@ -1,21 +1,20 @@
 from enum import Enum
 from operator import itemgetter
-import lancedb
-import duckdb
-import attr
 
+import attr
+import duckdb
+import lancedb
+from langchain.globals import set_debug
+from langchain_community.vectorstores import DuckDB
+from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, format_document
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-from gooddata.agents.libs.vector_stores.lancedb_custom import CustomLanceDB
-from langchain_community.vectorstores import DuckDB
-from langchain.globals import set_debug
-from langchain_core.documents import Document
-
 
 from gooddata.agents.libs.gd_openai import GoodDataOpenAICommon
-from gooddata.agents.libs.utils import timeit, debug_to_file
+from gooddata.agents.libs.utils import debug_to_file, timeit
+from gooddata.agents.libs.vector_stores.lancedb_custom import CustomLanceDB
 
 PRODUCT_NAME = "GoodData Cloud"
 DEFAULT_MAX_SEARCH_RESULTS = 5
@@ -65,10 +64,7 @@ class GoodDataRAGCommon:
     # TODO - add any indexes?
     def connect_to_db(self):
         return self.vector_db.value.db_library.connect(
-            DB_URL_TEMPLATE.format(
-                org_id=self.gd_openai.org_id,
-                db_type=self.vector_db.name
-            )
+            DB_URL_TEMPLATE.format(org_id=self.gd_openai.org_id, db_type=self.vector_db.name)
         )
 
     def connect_to_table(self, db_conn, table_name: str) -> bool:
@@ -90,12 +86,7 @@ class GoodDataRAGCommon:
 
     @staticmethod
     def debug_documents(documents: list[Document]):
-        docs_str = "\n".join(
-            [
-                f"""Metadata:\n{str(r.metadata)}\n\nContent:\n{r.page_content}"""
-                for r in documents
-            ]
-        )
+        docs_str = "\n".join([f"""Metadata:\n{str(r.metadata)}\n\nContent:\n{r.page_content}""" for r in documents])
         debug_to_file("rag_docs.txt", docs_str)
 
     def init_vector_store_duckdb(self, documents: list[Document], db_conn):
@@ -153,10 +144,7 @@ class GoodDataRAGCommon:
 
     @timeit
     def get_rag_retriever(self, vector_store):
-        return vector_store.as_retriever(
-            search_type="similarity",
-            search_kwargs={"k": self.max_search_results}
-        )
+        return vector_store.as_retriever(search_type="similarity", search_kwargs={"k": self.max_search_results})
 
     def similarity_search(self, vector_store, query: str):
         # TODO - use direct select from the table? How to embed correct vectors?
@@ -213,10 +201,7 @@ class GoodDataRAGHistory(GoodDataRAGCommon):
             "question": lambda x: x["standalone_question"],
         }
         conversational_qa_chain = (
-            _inputs
-            | _context
-            | ChatPromptTemplate.from_template(chat_template)
-            | self.openai_chat_model
+            _inputs | _context | ChatPromptTemplate.from_template(chat_template) | self.openai_chat_model
         )
         return conversational_qa_chain
 
